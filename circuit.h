@@ -60,6 +60,7 @@ class circuit {
         circuit(string s);
         ~circuit();
         int get_n_cells() { return cells.size();}
+        int get_n_nets() { return nets.size();}
 
         cell* get_cell(string label);
         void add_cell_connections(vector<string> toks);
