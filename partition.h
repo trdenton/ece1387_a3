@@ -25,6 +25,8 @@ namespace a3 {
         bool assign(vector<cell*>&, cell*);
         bool assign_left(cell* c);
         bool assign_right(cell* c);
+        int lb();
+        partition* initial_solution();
     };
 }
 

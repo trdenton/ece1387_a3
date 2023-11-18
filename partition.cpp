@@ -3,6 +3,7 @@
 #include "spdlog/spdlog.h"
 #include <queue>
 #include <vector>
+#include <list>
 
 // the decision tree just exists,
 // any given node in the tree represents a partial or complete set of decisions
@@ -64,4 +65,42 @@ int a3::partition::cost() {
         }
     }
     return cost;
+}
+
+// lower bound function
+// right now - just use the number of cut nets
+int a3::partition::lb() {
+    return cost();
+}
+
+struct supercell {
+    
+};
+
+bool cell_sort_most_nets(cell* a, cell* b) {
+    return a->get_net_labels().size() > b->get_net_labels().size();
+}
+
+a3::partition* a3::partition::initial_solution() {
+    // sort cells by their fanout
+    // pick the highest fanout node, put it on the left (cell 1)
+    // among the next highest cells, pick the one with the least mutual overlap with cell 1.  put it on the right.
+    // alternate left and right, picking the next node via one with the most mutual nets to the supernode of that side
+
+    list<cell*> cells;
+    std::copy(circ->get_cells().begin(), circ->get_cells().end(), std::back_inserter(cells));
+    cells.sort(cell_sort_most_nets);
+
+    a3::partition* p = new a3::partition(circ);
+
+    p->assign_left(*cells.begin());
+    cells.erase(cells.begin());
+
+    bool insert_right = true;
+    while (cells.size() > 0) {
+        cell* c;
+        insert_right ? p->assign_right(c) : p->assign_left(c);
+        insert_right = !insert_right;
+    }
+    return p;
 }
