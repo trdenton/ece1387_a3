@@ -64,6 +64,7 @@ enable_testing()
 add_executable(
   unit_tests
   circuit.cpp
+  partition.cpp
   file_read_test.cc
 )
 
@@ -75,6 +76,7 @@ add_executable(
   main.cpp
   ui.cpp
   circuit.cpp
+  partition.cpp
   easygl/graphics.cpp
 )
 

@@ -65,6 +65,7 @@ class circuit {
         cell* get_cell(string label);
         void add_cell_connections(vector<string> toks);
         net* get_net(string label);
+        unordered_map<string,net*> get_nets() {return nets;};
         void add_net(string s);
         void foreach_cell(void (*fn)(circuit* circ, cell* c));
         void foreach_net(void (*fn)(circuit* circ, net* n));
