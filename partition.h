@@ -22,7 +22,7 @@ namespace a3 {
 
         partition(circuit*);
         int cost();
-        bool assign(vector<cell*>, cell*);
+        bool assign(vector<cell*>&, cell*);
         bool assign_left(cell* c);
         bool assign_right(cell* c);
     };

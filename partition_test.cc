@@ -11,12 +11,25 @@ TEST(Partition, test_assign) {
     a3::partition* p = new a3::partition(c);
     cell* c1 = c->get_cell("1");
     cell* c2 = c->get_cell("2");
+    cell* c3 = c->get_cell("3");
+    cell* c4 = c->get_cell("4");
 
     ASSERT_TRUE(p->assign_left(c1));
     ASSERT_FALSE(p->assign_left(c1)); // should only go in once
     ASSERT_FALSE(p->assign_right(c1)); // should only go in once
+    ASSERT_EQ(p->cost(), 0); // 1 and 2 only share one net (a),  hence size of cut set is 1
 
     ASSERT_TRUE(p->assign_right(c2));
+    ASSERT_EQ(p->cost(), 1); // 1 and 2 only share one net (a),  hence size of cut set is 1
+
+    // put cell 3 in the same as 2, should not increase cost
+    ASSERT_TRUE(p->assign_right(c3));
+    ASSERT_EQ(p->cost(), 1); 
+
+    // put cell 4 in the opposite as 3 for incremental cost 1
+    ASSERT_TRUE(p->assign_left(c4));
+    ASSERT_EQ(p->cost(), 2);
+    
 
     delete p;
     delete c;

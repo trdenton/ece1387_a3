@@ -15,7 +15,7 @@ a3::partition::partition(circuit* c) {
     vr = vector<cell*>();
 }
 
-bool a3::partition::assign(vector<cell*> v, cell* c) {
+bool a3::partition::assign(vector<cell*>& v, cell* c) {
     bool ret = false;
     auto pos = std::find(unassigned.begin(), unassigned.end(), c);
     if (pos != unassigned.end()) {  // if we actually found it in the unassigned list
