@@ -3,6 +3,7 @@
 #include "spdlog/spdlog.h"
 #include <queue>
 #include <vector>
+#include <numeric>
 #include <list>
 
 // the decision tree just exists,
@@ -135,11 +136,31 @@ a3::partition* a3::partition::initial_solution() {
         if (!rc) {
             spdlog::warn("issue inserting cell {} in {}", c->label, insert_right? "right" : "left");
         } else {
-            spdlog::info("inserted cell {} in {}", c->label, insert_right? "right" : "left");
+            spdlog::debug("inserted cell {} in {}", c->label, insert_right? "right" : "left");
         }
 
         insert_right = !insert_right;
         delete g_supercell;
+    }
+    return p;
+}
+
+a3::partition* a3::partition::initial_solution_random() {
+    a3::partition* p = new a3::partition(circ);
+
+    bool insert_right = true;
+    while(p->unassigned.size() > 0) {
+        int random_index = rand() % p->unassigned.size();
+        cell* c = p->unassigned[random_index];
+        
+        bool rc = insert_right ? p->assign_right(c) : p->assign_left(c);
+        if (!rc) {
+            spdlog::warn("issue inserting cell {} in {}", c->label, insert_right? "right" : "left");
+        } else {
+            spdlog::debug("inserted cell {} in {}", c->label, insert_right? "right" : "left");
+        }
+
+        insert_right = !insert_right;
     }
     return p;
 }

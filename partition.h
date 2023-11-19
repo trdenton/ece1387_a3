@@ -27,6 +27,7 @@ namespace a3 {
         bool assign_right(cell* c);
         int lb();
         partition* initial_solution();
+        partition* initial_solution_random();
         cell* make_right_supercell();
         cell* make_left_supercell();
     };
