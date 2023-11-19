@@ -97,22 +97,19 @@ a3::partition* a3::partition::initial_solution() {
     // among the next highest cells, pick the one with the least mutual overlap with cell 1.  put it on the right.
     // alternate left and right, picking the next node via one with the most mutual nets to the supernode of that side
 
-    list<cell*> cells(0);
-    std::copy(circ->get_cells().begin(), circ->get_cells().end(), std::back_inserter(cells));
-    cells.sort(cell_sort_most_nets);
 
     a3::partition* p = new a3::partition(circ);
+    std::sort(p->unassigned.begin(), p->unassigned.end(), cell_sort_most_nets);
 
-    p->assign_left(*cells.begin());
-    cell* lcell = *cells.begin();
-    cells.erase(cells.begin());
+    cell* lcell = *unassigned.begin();
+    p->assign_left(*unassigned.begin());
 
-    cell* rcell = *(cells.begin());
+    cell* rcell = *(unassigned.begin());
 
     // for the right, we want a cell that has the least overlap
     // but still has many connections
     int score = 0;
-    for(auto& c : cells) {
+    for(auto& c : p->unassigned) {
         int new_score = 0;
         int n_mutual_nets = lcell->get_mutual_net_labels(c).size();
         int n_r_nets = c->get_net_labels().size();
@@ -127,20 +124,19 @@ a3::partition* a3::partition::initial_solution() {
         }
     }
     p->assign_right(rcell);
-    cells.remove(rcell);
 
     bool insert_right = false;
-    while (cells.size() > 0) {
+    while (p->unassigned.size() > 0) {
         g_supercell = insert_right ? p->make_right_supercell() : p->make_left_supercell();
-        cells.sort(sort_by_most_mutual_to_g_supercell);
+        std::sort(p->unassigned.begin(), p->unassigned.end(), sort_by_most_mutual_to_g_supercell);
 
-        bool rc = insert_right ? p->assign_right(*cells.begin()) : p->assign_left(*cells.begin());
+        cell* c = *p->unassigned.begin();
+        bool rc = insert_right ? p->assign_right(c) : p->assign_left(c);
         if (!rc) {
-            spdlog::warn("issue inserting cell {} in {}", (*cells.begin())->label, insert_right? "right" : "left");
+            spdlog::warn("issue inserting cell {} in {}", c->label, insert_right? "right" : "left");
         } else {
-            spdlog::info("inserted cell {} in {}", (*cells.begin())->label, insert_right? "right" : "left");
+            spdlog::info("inserted cell {} in {}", c->label, insert_right? "right" : "left");
         }
-        cells.erase(cells.begin());
 
         insert_right = !insert_right;
         delete g_supercell;
