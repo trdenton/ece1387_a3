@@ -2,6 +2,7 @@
 #include <vector>
 #include <unordered_set>
 #include <utility>
+#include <cstdlib>
 #include "circuit.h"
 #include "partition.h"
 
@@ -30,6 +31,22 @@ TEST(Partition, test_assign) {
     ASSERT_EQ(p->cost(), 2);
     
 
+    delete p;
+    delete c;
+}
+
+TEST(Partition, test_initial_solution) {
+
+    circuit* c = new circuit("../data/cct1");
+    a3::partition* p = new a3::partition(c);
+    a3::partition* p_init = p->initial_solution();
+
+    ASSERT_TRUE(p_init->unassigned.empty());
+    ASSERT_EQ(p_init->vr.size() + p_init->vl.size(), c->get_n_cells());
+
+    ASSERT_EQ(p_init->vr.size(), p_init->vl.size());
+
+    delete p_init;
     delete p;
     delete c;
 }

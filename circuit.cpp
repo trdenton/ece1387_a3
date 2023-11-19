@@ -114,8 +114,19 @@ cell::cell(vector<string> s) {
     x = 0;
     y = 0;
     label = s[0];
-    fixed = false;
     //nets = std::vector<string>(s.begin()+1,s.end()-1);
+}
+
+// make a supercell
+cell::cell(vector<cell*> cells) {
+    x = 0;
+    y = 0;
+    label = "[sc]";
+    for(auto& c : cells) {
+        for(auto& n: c->get_net_labels()) {
+            add_net(n);
+        }
+    }
 }
 
 unordered_set<string> cell::get_net_labels() {

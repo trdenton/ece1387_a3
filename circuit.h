@@ -49,6 +49,7 @@ class cell {
         void add_net(string s);
         bool is_connected_to(cell* other);
         vector<string> get_mutual_net_labels(cell* other);
+        cell(vector<cell*> cells);
 };
 
 class circuit {

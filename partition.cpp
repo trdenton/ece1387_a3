@@ -41,6 +41,15 @@ bool a3::partition::assign_right(cell* c) {
     return assign(vr, c);
 }
 
+cell* a3::partition::make_left_supercell() {
+    return new cell(vl);
+}
+
+cell* a3::partition::make_right_supercell() {
+    return new cell(vr);
+}
+
+
 int a3::partition::cost() {
     // iterate over every net.  See if it has cells in both left and right
     int cost = 0;
@@ -73,12 +82,13 @@ int a3::partition::lb() {
     return cost();
 }
 
-struct supercell {
-    
-};
-
 bool cell_sort_most_nets(cell* a, cell* b) {
     return a->get_net_labels().size() > b->get_net_labels().size();
+}
+
+cell* g_supercell;
+bool sort_by_most_mutual_to_g_supercell(cell* a, cell* b) {
+    return g_supercell->get_mutual_net_labels(a).size() > g_supercell->get_mutual_net_labels(b).size();
 }
 
 a3::partition* a3::partition::initial_solution() {
@@ -87,20 +97,53 @@ a3::partition* a3::partition::initial_solution() {
     // among the next highest cells, pick the one with the least mutual overlap with cell 1.  put it on the right.
     // alternate left and right, picking the next node via one with the most mutual nets to the supernode of that side
 
-    list<cell*> cells;
+    list<cell*> cells(0);
     std::copy(circ->get_cells().begin(), circ->get_cells().end(), std::back_inserter(cells));
     cells.sort(cell_sort_most_nets);
 
     a3::partition* p = new a3::partition(circ);
 
     p->assign_left(*cells.begin());
+    cell* lcell = *cells.begin();
     cells.erase(cells.begin());
 
-    bool insert_right = true;
+    cell* rcell = *(cells.begin());
+
+    // for the right, we want a cell that has the least overlap
+    // but still has many connections
+    int score = 0;
+    for(auto& c : cells) {
+        int new_score = 0;
+        int n_mutual_nets = lcell->get_mutual_net_labels(c).size();
+        int n_r_nets = c->get_net_labels().size();
+        int n_l_nets = lcell->get_net_labels().size();
+        int n_unique_r_nets = n_r_nets - n_mutual_nets;
+        int n_unique_l_nets = n_l_nets - n_mutual_nets;
+
+        new_score = (n_unique_r_nets)*(n_unique_l_nets);
+        if (new_score > score) {
+            score = new_score;
+            rcell = c;
+        }
+    }
+    p->assign_right(rcell);
+    cells.remove(rcell);
+
+    bool insert_right = false;
     while (cells.size() > 0) {
-        cell* c;
-        insert_right ? p->assign_right(c) : p->assign_left(c);
+        g_supercell = insert_right ? p->make_right_supercell() : p->make_left_supercell();
+        cells.sort(sort_by_most_mutual_to_g_supercell);
+
+        bool rc = insert_right ? p->assign_right(*cells.begin()) : p->assign_left(*cells.begin());
+        if (!rc) {
+            spdlog::warn("issue inserting cell {} in {}", (*cells.begin())->label, insert_right? "right" : "left");
+        } else {
+            spdlog::info("inserted cell {} in {}", (*cells.begin())->label, insert_right? "right" : "left");
+        }
+        cells.erase(cells.begin());
+
         insert_right = !insert_right;
+        delete g_supercell;
     }
     return p;
 }
