@@ -100,25 +100,25 @@ bool sort_by_most_mutual_to_g_supercell(cell* a, cell* b) {
     return g_supercell->get_mutual_net_labels(a).size() > g_supercell->get_mutual_net_labels(b).size();
 }
 
-a3::partition* a3::partition::initial_solution() {
+void a3::partition::initial_solution() {
     // sort cells by their fanout
     // pick the highest fanout node, put it on the left (cell 1)
     // among the next highest cells, pick the one with the least mutual overlap with cell 1.  put it on the right.
     // alternate left and right, picking the next node via one with the most mutual nets to the supernode of that side
 
 
-    a3::partition* p = new a3::partition(circ);
-    std::sort(p->unassigned.begin(), p->unassigned.end(), cell_sort_most_nets);
+    //a3::partition* p = new a3::partition(circ);
+    std::sort(unassigned.begin(), unassigned.end(), cell_sort_most_nets);
 
     cell* lcell = *unassigned.begin();
-    p->assign_left(lcell);
+    assign_left(lcell);
 
     cell* rcell = *(unassigned.begin());
 
     // for the right, we want a cell that has the least overlap
     // but still has many connections
     int score = 0;
-    for(auto& c : p->unassigned) {
+    for(auto& c : unassigned) {
         int new_score = 0;
         int n_mutual_nets = lcell->get_mutual_net_labels(c).size();
         int n_r_nets = c->get_net_labels().size();
@@ -132,15 +132,15 @@ a3::partition* a3::partition::initial_solution() {
             rcell = c;
         }
     }
-    p->assign_right(rcell);
+    assign_right(rcell);
 
     bool insert_right = false;
-    while (p->unassigned.size() > 0) {
-        g_supercell = insert_right ? p->make_right_supercell() : p->make_left_supercell();
-        std::sort(p->unassigned.begin(), p->unassigned.end(), sort_by_most_mutual_to_g_supercell);
+    while (unassigned.size() > 0) {
+        g_supercell = insert_right ? make_right_supercell() : make_left_supercell();
+        std::sort(unassigned.begin(), unassigned.end(), sort_by_most_mutual_to_g_supercell);
 
-        cell* c = *p->unassigned.begin();
-        bool rc = insert_right ? p->assign_right(c) : p->assign_left(c);
+        cell* c = *unassigned.begin();
+        bool rc = insert_right ? assign_right(c) : assign_left(c);
         if (!rc) {
             spdlog::warn("issue inserting cell {} in {}", c->label, insert_right? "right" : "left");
         } else {
@@ -150,18 +150,15 @@ a3::partition* a3::partition::initial_solution() {
         insert_right = !insert_right;
         delete g_supercell;
     }
-    return p;
 }
 
-a3::partition* a3::partition::initial_solution_random() {
-    a3::partition* p = new a3::partition(circ);
-
+void a3::partition::initial_solution_random() {
     bool insert_right = true;
-    while(p->unassigned.size() > 0) {
-        int random_index = rand() % p->unassigned.size();
-        cell* c = p->unassigned[random_index];
+    while(unassigned.size() > 0) {
+        int random_index = rand() % unassigned.size();
+        cell* c = unassigned[random_index];
         
-        bool rc = insert_right ? p->assign_right(c) : p->assign_left(c);
+        bool rc = insert_right ? assign_right(c) : assign_left(c);
         if (!rc) {
             spdlog::warn("issue inserting cell {} in {}", c->label, insert_right? "right" : "left");
         } else {
@@ -170,7 +167,6 @@ a3::partition* a3::partition::initial_solution_random() {
 
         insert_right = !insert_right;
     }
-    return p;
 }
 
 void traverser::bfs_step() {

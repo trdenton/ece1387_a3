@@ -43,14 +43,13 @@ TEST(Partition, test_initial_solution) {
 
     circuit* c = new circuit("../data/cct1");
     a3::partition* p = new a3::partition(c);
-    a3::partition* p_init = p->initial_solution();
+    p->initial_solution();
 
-    ASSERT_TRUE(p_init->unassigned.empty());
-    ASSERT_EQ(p_init->vr.size() + p_init->vl.size(), c->get_n_cells());
+    ASSERT_TRUE(p->unassigned.empty());
+    ASSERT_EQ(p->vr.size() + p->vl.size(), c->get_n_cells());
 
-    ASSERT_EQ(p_init->vr.size(), p_init->vl.size());
+    ASSERT_EQ(p->vr.size(), p->vl.size());
 
-    delete p_init;
     delete p;
     delete c;
 }
@@ -66,14 +65,15 @@ void test_circuit_against_random(string f){
     srand(time(NULL));
     circuit* c = new circuit(f);
     a3::partition* p = new a3::partition(c);
-    a3::partition* p_init = p->initial_solution();
+    a3::partition* p_blank = new a3::partition(c);
+    p->initial_solution();
 
-
-    spdlog::info("score from initial solution: {}", p_init->cost());
+    spdlog::info("score from initial solution: {}", p->cost());
 
     vector<int> rand_scores(0);
     for(int i = 0; i < 1000; ++i) {
-        a3::partition* p_rand = p->initial_solution_random();
+        a3::partition* p_rand = p_blank->copy();
+        p_rand->initial_solution_random();
         rand_scores.push_back(p_rand->cost());
         delete p_rand;
     }
@@ -84,7 +84,16 @@ void test_circuit_against_random(string f){
     spdlog::info("median score of {} random solutions: {}", rand_scores.size(), rand_scores[rand_scores.size()/2]);
     spdlog::info("lowest score of {} random solutions: {}", rand_scores.size(), rand_scores[0]);
 
-    delete p_init;
+    delete p_blank;
+    delete p;
+    delete c;
+}
+
+TEST(Tree, init) {
+
+    circuit* c = new circuit("../data/cct1");
+    a3::partition* p = new a3::partition(c);
+
     delete p;
     delete c;
 }
