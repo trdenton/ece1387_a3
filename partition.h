@@ -48,4 +48,5 @@ class traverser {
         traverser(pnode*, vector<cell*>);
 };
 
+bool cell_sort_most_nets(cell* a, cell* b);
 #endif

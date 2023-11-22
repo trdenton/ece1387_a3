@@ -103,6 +103,11 @@ TEST(Partition, unassign_cell) {
     circuit* c = new circuit("../data/cct1");
     a3::partition* p = new a3::partition(c);
 
+    // this is normally done by initial_solution
+    std::sort(p->unassigned.begin(), p->unassigned.end(), cell_sort_most_nets);
+
+    ASSERT_TRUE(std::is_sorted(p->unassigned.begin(), p->unassigned.end(), cell_sort_most_nets));
+
     ASSERT_TRUE(p->assign_left(*c->get_cells().begin()));
 
     ASSERT_EQ(p->vr.size(), 0);
@@ -114,6 +119,8 @@ TEST(Partition, unassign_cell) {
     ASSERT_EQ(p->vr.size(), 0);
     ASSERT_EQ(p->vl.size(), 0);
     ASSERT_EQ(p->unassigned.size(), c->get_n_cells());
+    
+    ASSERT_TRUE(std::is_sorted(p->unassigned.begin(), p->unassigned.end(), cell_sort_most_nets));
 
     delete p;
     delete c;

@@ -9,6 +9,8 @@
 // the decision tree just exists,
 // any given node in the tree represents a partial or complete set of decisions
 
+bool cell_sort_most_nets(cell* a, cell* b);
+bool sort_by_most_mutual_to_g_supercell(cell* a, cell* b);
 
 a3::partition::partition(circuit* c) {
     circ = c;
@@ -61,9 +63,24 @@ bool a3::partition::_unassign(vector<cell*>& v, cell* c) {
 }
 
 bool a3::partition::unassign(cell* c) {
-    bool rc = _unassign(vl, c) ^ _unassign(vr, c);
+    bool rc = false;
+
+    if (_unassign(vl, c)) {
+        rc = true;
+    } else if (_unassign(vr, c)) {
+        rc = true;
+    }
+
+    // insertion sort to maintain unassigned order
     if (rc) {
-        unassigned.push_back(c); // we need to sort again
+        for(auto iter = unassigned.begin(); iter < unassigned.end(); ++iter) {
+            if (cell_sort_most_nets(c, *iter)) {
+                unassigned.insert(iter, c);
+                return true;
+            }
+        }
+        unassigned.push_back(c);
+        
     }
     return rc;
 }
