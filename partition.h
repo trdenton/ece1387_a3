@@ -7,6 +7,10 @@
 
 namespace a3 {
     struct partition {
+    private:
+        bool _unassign(vector<cell*>& v, cell* c);
+
+    public:
         vector<cell*> vr;
         vector<cell*> vl;
         vector<cell*> unassigned;
@@ -17,6 +21,7 @@ namespace a3 {
         bool assign(vector<cell*>&, cell*);
         bool assign_left(cell* c);
         bool assign_right(cell* c);
+        bool unassign(cell* c);
         int lb();
         void initial_solution();
         void initial_solution_random();

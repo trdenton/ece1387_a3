@@ -97,3 +97,24 @@ TEST(Tree, init) {
     delete p;
     delete c;
 }
+
+TEST(Partition, unassign_cell) {
+
+    circuit* c = new circuit("../data/cct1");
+    a3::partition* p = new a3::partition(c);
+
+    ASSERT_TRUE(p->assign_left(*c->get_cells().begin()));
+
+    ASSERT_EQ(p->vr.size(), 0);
+    ASSERT_EQ(p->vl.size(), 1);
+    ASSERT_EQ(p->unassigned.size(), c->get_n_cells()-1);
+
+    ASSERT_TRUE(p->unassign(*c->get_cells().begin()));
+
+    ASSERT_EQ(p->vr.size(), 0);
+    ASSERT_EQ(p->vl.size(), 0);
+    ASSERT_EQ(p->unassigned.size(), c->get_n_cells());
+
+    delete p;
+    delete c;
+}

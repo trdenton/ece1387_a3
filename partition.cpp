@@ -50,6 +50,24 @@ bool a3::partition::assign_right(cell* c) {
     return assign(vr, c);
 }
 
+bool a3::partition::_unassign(vector<cell*>& v, cell* c) {
+    bool rc = false;
+    auto elem = std::find(v.begin(), v.end(), c);
+    if (elem != v.end()) {
+        rc = true; 
+        v.erase(elem);
+    }
+    return rc;
+}
+
+bool a3::partition::unassign(cell* c) {
+    bool rc = _unassign(vl, c) ^ _unassign(vr, c);
+    if (rc) {
+        unassigned.push_back(c); // we need to sort again
+    }
+    return rc;
+}
+
 cell* a3::partition::make_left_supercell() {
     return new cell(vl);
 }
