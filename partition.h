@@ -5,14 +5,6 @@
 #include <vector>
 #include <stack>
 
-/*
-struct pnode {
-    cell* cell;
-    pnode* parent;
-    pnode* left;
-    pnode* right;
-};
-*/
 namespace a3 {
     struct partition {
         vector<cell*> vr;
@@ -30,14 +22,25 @@ namespace a3 {
         partition* initial_solution_random();
         cell* make_right_supercell();
         cell* make_left_supercell();
+        partition* copy();
     };
 }
 
-/*
+struct pnode {
+    cell* cell;
+    pnode* parent;
+    pnode* left;
+    pnode* right;
+};
+
 class traverser {
-    queue<pnode*> q_bfs;
+    int best;
+    pnode* root;
+    queue<a3::partition*> q_bfs;
+    vector<cell*> cells;
     public:
-        bfs(pnode* root);
-}
-*/
+        void bfs_step();
+        traverser(pnode*, vector<cell*>);
+};
+
 #endif

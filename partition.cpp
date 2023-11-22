@@ -17,6 +17,14 @@ a3::partition::partition(circuit* c) {
     vr = vector<cell*>();
 }
 
+a3::partition* a3::partition::copy() {
+    a3::partition* p = new a3::partition(circ);
+    p->vl = vector<cell*>(vl);
+    p->vr = vector<cell*>(vr);
+    p->unassigned = vector<cell*>(unassigned);
+    return p;
+}
+
 bool a3::partition::assign(vector<cell*>& v, cell* c) {
     bool ret = false;
     auto pos = std::find(unassigned.begin(), unassigned.end(), c);
@@ -103,7 +111,7 @@ a3::partition* a3::partition::initial_solution() {
     std::sort(p->unassigned.begin(), p->unassigned.end(), cell_sort_most_nets);
 
     cell* lcell = *unassigned.begin();
-    p->assign_left(*unassigned.begin());
+    p->assign_left(lcell);
 
     cell* rcell = *(unassigned.begin());
 
@@ -164,3 +172,50 @@ a3::partition* a3::partition::initial_solution_random() {
     }
     return p;
 }
+
+void traverser::bfs_step() {
+    a3::partition* p = q_bfs.front();
+    q_bfs.pop();
+    // do the thing
+
+    a3::partition* pl = p->copy();
+    a3::partition* pr = p->copy();
+    pl->assign_left(*p->unassigned.begin());
+    pr->assign_right(*p->unassigned.begin());
+
+    if (pl->lb() < best) {
+        q_bfs.push(pl);
+    } else {
+        delete pl;
+    }
+
+    if (pr->lb() < best) {
+        q_bfs.push(pr);
+    } else {
+        delete pr;
+    }
+    delete p;
+}
+
+traverser::traverser(pnode* _root, vector<cell*> _cells) {
+    root = _root;
+    cells = vector<cell*>(_cells);
+    std::sort(cells.begin(), cells.end(), cell_sort_most_nets);
+    //q_bfs.push(_root);
+}
+
+/*
+pnode* build_tree(vector<cell*> _cells) {
+    pnode* root;
+    
+    cells = vector<cell*>(_cells);
+    std::sort(cells.begin(), cells.end(), cell_sort_most_nets);
+    
+    root.cell = cells[0];
+    root.left = cells[1];
+    root.right = cells[1];
+    for(int i = 0; i < cells.size(); ++i) {
+        
+    }
+}
+*/
