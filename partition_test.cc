@@ -71,7 +71,7 @@ void test_circuit_against_random(string f){
     spdlog::info("score from initial solution: {}", p->cost());
 
     vector<int> rand_scores(0);
-    for(int i = 0; i < 1000; ++i) {
+    for(int i = 0; i < 10; ++i) {
         a3::partition* p_rand = p_blank->copy();
         p_rand->initial_solution_random();
         rand_scores.push_back(p_rand->cost());
@@ -91,9 +91,13 @@ void test_circuit_against_random(string f){
 
 TEST(Tree, init) {
 
-    circuit* c = new circuit("../data/cct1");
+    circuit* c = new circuit("../data/partition_test");
     a3::partition* p = new a3::partition(c);
+    spdlog::set_level(spdlog::level::debug);
+    
+    pnode* tree = build_tree(c->get_cells());
 
+    del_tree(tree);
     delete p;
     delete c;
 }

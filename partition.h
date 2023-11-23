@@ -41,7 +41,7 @@ struct pnode {
 class traverser {
     int best;
     pnode* root;
-    queue<a3::partition*> q_bfs;
+    queue<pnode*> q_bfs;
     vector<cell*> cells;
     public:
         void bfs_step();
@@ -49,4 +49,6 @@ class traverser {
 };
 
 bool cell_sort_most_nets(cell* a, cell* b);
+pnode* build_tree(vector<cell*> _cells);
+void del_tree(pnode* root);
 #endif

@@ -205,10 +205,11 @@ void a3::partition::initial_solution_random() {
 }
 
 void traverser::bfs_step() {
-    a3::partition* p = q_bfs.front();
+    pnode* pn = q_bfs.front();
     q_bfs.pop();
     // do the thing
 
+    /*
     a3::partition* pl = p->copy();
     a3::partition* pr = p->copy();
     pl->assign_left(*p->unassigned.begin());
@@ -226,27 +227,75 @@ void traverser::bfs_step() {
         delete pr;
     }
     delete p;
+    */
 }
 
 traverser::traverser(pnode* _root, vector<cell*> _cells) {
     root = _root;
     cells = vector<cell*>(_cells);
     std::sort(cells.begin(), cells.end(), cell_sort_most_nets);
-    //q_bfs.push(_root);
+    q_bfs.push(_root);
 }
 
-/*
 pnode* build_tree(vector<cell*> _cells) {
-    pnode* root;
+    pnode* root = new pnode();
     
-    cells = vector<cell*>(_cells);
+    vector<cell*> cells = vector<cell*>(_cells);
     std::sort(cells.begin(), cells.end(), cell_sort_most_nets);
+    spdlog::debug("cells:");
+
+    for(auto& c: cells) {
+        spdlog::debug("\t{}", c->label);
+    }
+    spdlog::debug("/cells");
     
-    root.cell = cells[0];
-    root.left = cells[1];
-    root.right = cells[1];
-    for(int i = 0; i < cells.size(); ++i) {
-        
+    root->parent = nullptr;
+    
+    stack<std::pair<pnode*, vector<cell*>::iterator>> s;
+    s.push({root, cells.begin()});
+
+    while(!s.empty()) {
+        std::pair<pnode*, vector<cell*>::iterator> step = s.top(); s.pop();
+        step.first->cell = *step.second;
+        spdlog::debug("cell {}", (*step.second)->label);
+        if (step.second < cells.end()-1) {
+            step.first->left = new pnode();
+            step.first->left->parent = step.first;
+            step.first->right = new pnode();
+            step.first->right->parent = step.first;
+            s.push({step.first->right, step.second+1});
+            s.push({step.first->left, step.second+1});
+        } else {
+            // we've reached a leaf node
+            spdlog::debug("reached leaf node ({})", (*step.second)->label);
+        }
+    }
+
+    return root;
+}
+
+void del_tree(pnode* root) {
+    stack<pnode*> s;
+    s.push(root);
+    while(!s.empty()) {
+        pnode* pn = s.top();
+        if (pn->left != nullptr or pn->right != nullptr) {
+            if (pn->left != nullptr) {
+                s.push(pn->left);
+            } 
+            if (pn->right != nullptr) {
+                s.push(pn->right);
+            }
+        } else {
+            if (pn->parent != nullptr) {
+                if (pn->parent->left == pn) {
+                    pn->parent->left = nullptr;
+                } else if (pn->parent->right == pn) {
+                    pn->parent->right = nullptr;
+                } 
+            }
+            s.pop();
+            delete pn;
+        }
     }
 }
-*/
