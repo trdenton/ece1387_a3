@@ -106,10 +106,34 @@ TEST(Tree, bfs) {
     circuit* c = new circuit("../data/partition_test");
     a3::partition* p = new a3::partition(c);
     spdlog::set_level(spdlog::level::debug);
+
+    cell* c1 = c->get_cells()[0];
+    cell* c2 = c->get_cells()[1];
+    cell* c3 = c->get_cells()[2];
+    cell* c4 = c->get_cells()[3];
     
     traverser* t = new traverser(c->get_cells());
-    while (t->bfs_step()) {
-    }
+
+    ASSERT_EQ(t->bfs_step()->cell, c2);
+
+    ASSERT_EQ(t->bfs_step()->cell, c3);
+    ASSERT_EQ(t->bfs_step()->cell, c3);
+
+    ASSERT_EQ(t->bfs_step()->cell, c4);
+    ASSERT_EQ(t->bfs_step()->cell, c4);
+    ASSERT_EQ(t->bfs_step()->cell, c4);
+    ASSERT_EQ(t->bfs_step()->cell, c4);
+
+    ASSERT_EQ(t->bfs_step()->cell, c1);
+    ASSERT_EQ(t->bfs_step()->cell, c1);
+    ASSERT_EQ(t->bfs_step()->cell, c1);
+    ASSERT_EQ(t->bfs_step()->cell, c1);
+    ASSERT_EQ(t->bfs_step()->cell, c1);
+    ASSERT_EQ(t->bfs_step()->cell, c1);
+    ASSERT_EQ(t->bfs_step()->cell, c1);
+    ASSERT_EQ(t->bfs_step()->cell, c1);
+
+    
 
     delete t;
     delete p;

@@ -44,7 +44,7 @@ class traverser {
     queue<pnode*> q_bfs;
     vector<cell*> cells;
     public:
-        bool bfs_step();
+        pnode* bfs_step();
         traverser(vector<cell*>);
         ~traverser();
 };

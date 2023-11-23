@@ -204,8 +204,8 @@ void a3::partition::initial_solution_random() {
     }
 }
 
-bool traverser::bfs_step() {
-    bool rc = false;
+pnode* traverser::bfs_step() {
+    pnode* rc = nullptr;
     if (!q_bfs.empty()) {
         pnode* p = q_bfs.front(); q_bfs.pop();
         //do thing
@@ -216,7 +216,7 @@ bool traverser::bfs_step() {
         if (p->right != nullptr) {
             q_bfs.push(p->right);
         }
-        rc = true;
+        rc = p;
     } 
     return rc;
 }
