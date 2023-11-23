@@ -102,6 +102,20 @@ TEST(Tree, init) {
     delete c;
 }
 
+TEST(Tree, bfs) {
+    circuit* c = new circuit("../data/partition_test");
+    a3::partition* p = new a3::partition(c);
+    spdlog::set_level(spdlog::level::debug);
+    
+    traverser* t = new traverser(c->get_cells());
+    while (t->bfs_step()) {
+    }
+
+    delete t;
+    delete p;
+    delete c;
+}
+
 TEST(Partition, unassign_cell) {
 
     circuit* c = new circuit("../data/cct1");

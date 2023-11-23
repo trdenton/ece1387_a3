@@ -204,37 +204,32 @@ void a3::partition::initial_solution_random() {
     }
 }
 
-void traverser::bfs_step() {
-    pnode* pn = q_bfs.front();
-    q_bfs.pop();
-    // do the thing
-
-    /*
-    a3::partition* pl = p->copy();
-    a3::partition* pr = p->copy();
-    pl->assign_left(*p->unassigned.begin());
-    pr->assign_right(*p->unassigned.begin());
-
-    if (pl->lb() < best) {
-        q_bfs.push(pl);
-    } else {
-        delete pl;
-    }
-
-    if (pr->lb() < best) {
-        q_bfs.push(pr);
-    } else {
-        delete pr;
-    }
-    delete p;
-    */
+bool traverser::bfs_step() {
+    bool rc = false;
+    if (!q_bfs.empty()) {
+        pnode* p = q_bfs.front(); q_bfs.pop();
+        //do thing
+        spdlog::debug("visiting cell {}", p->cell->label);
+        if (p->left != nullptr) {
+            q_bfs.push(p->left);
+        }
+        if (p->right != nullptr) {
+            q_bfs.push(p->right);
+        }
+        rc = true;
+    } 
+    return rc;
 }
 
-traverser::traverser(pnode* _root, vector<cell*> _cells) {
-    root = _root;
+traverser::traverser(vector<cell*> _cells) {
     cells = vector<cell*>(_cells);
-    std::sort(cells.begin(), cells.end(), cell_sort_most_nets);
-    q_bfs.push(_root);
+    root = build_tree(cells);
+    q_bfs = queue<pnode*>();
+    q_bfs.push(root);
+}
+
+traverser::~traverser() {
+    del_tree(root);
 }
 
 pnode* build_tree(vector<cell*> _cells) {

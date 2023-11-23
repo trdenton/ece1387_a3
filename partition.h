@@ -44,8 +44,9 @@ class traverser {
     queue<pnode*> q_bfs;
     vector<cell*> cells;
     public:
-        void bfs_step();
-        traverser(pnode*, vector<cell*>);
+        bool bfs_step();
+        traverser(vector<cell*>);
+        ~traverser();
 };
 
 bool cell_sort_most_nets(cell* a, cell* b);
