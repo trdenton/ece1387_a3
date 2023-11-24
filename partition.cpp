@@ -216,19 +216,38 @@ pnode* traverser::bfs_step() {
     pnode* rc = nullptr;
     if (!q_bfs.empty()) {
         pnode* pn = q_bfs.front(); q_bfs.pop();
-        //do thing
-        spdlog::debug("visiting cell {}", pn->cell->label);
+
+
         visited_nodes++;
-        if (pn->left != nullptr) {
-            if (!prune(pn->left->p, best)) {
-                q_bfs.push(pn->left);
+        spdlog::debug("visiting cell {}", (*pn->cell)->label);
+        if (pn->cell < cells.end()-1) {
+
+            // balance constraint
+            if (pn->p->vl.size() < cells.size()/2) {
+                pn->left = new pnode();
+                pn->left->cell = pn->cell + 1;
+                pn->left->parent = pn;
+                pn->left->p = pn->p->copy();
+                pn->left->p->assign_left(*(pn->cell + 1));
+                if (!prune(pn->left->p, best)) {
+                    q_bfs.push(pn->left);
+                }
             }
-        }
-        if (pn->right != nullptr) {
-            if (!prune(pn->right->p, best)) {
-                q_bfs.push(pn->right);
+
+            // balance constraint
+            if (pn->p->vl.size() < cells.size()/2) {
+                pn->right = new pnode();
+                pn->right->cell = pn->cell + 1;
+                pn->right->parent = pn;
+                pn->right->p = pn->p->copy();
+                pn->right->p->assign_right(*(pn->cell + 1));
+                if (!prune(pn->right->p, best)) {
+                    q_bfs.push(pn->right);
+                }
             }
+
         }
+
         rc = pn;
     } 
     return rc;
@@ -236,12 +255,20 @@ pnode* traverser::bfs_step() {
 
 traverser::traverser(circuit* c, a3::partition* _best, bool (*prune_fn)(a3::partition* test, a3::partition*& best)) {
     cells = vector<cell*>(c->get_cells());
+    std::sort(cells.begin(), cells.end(), cell_sort_most_nets);
     visited_nodes = 0;
-    root = build_tree(c);
+
+    root = new pnode();
+    root->parent = nullptr;
+    root->cell = cells.begin();
+    root->p = new a3::partition(c);
+    
     q_bfs = queue<pnode*>();
     q_bfs.push(root);
+
     prune = prune_fn;
     best = _best;
+
 }
 
 traverser::~traverser() {
@@ -249,48 +276,7 @@ traverser::~traverser() {
 }
 
 pnode* build_tree(circuit* c) {
-    pnode* root = new pnode();
-    
-    vector<cell*> cells = vector<cell*>(c->get_cells());
-    std::sort(cells.begin(), cells.end(), cell_sort_most_nets);
-    spdlog::debug("cells:");
-
-    for(auto& c: cells) {
-        spdlog::debug("\t{}", c->label);
-    }
-    spdlog::debug("/cells");
-    
-    root->parent = nullptr;
-    root->p = new a3::partition(c);
-    
-    stack<std::pair<pnode*, vector<cell*>::iterator>> s;
-    s.push({root, cells.begin()});
-
-    while(!s.empty()) {
-        std::pair<pnode*, vector<cell*>::iterator> step = s.top(); s.pop();
-        step.first->cell = *step.second;
-        if (step.second < cells.end()-1) {
-
-            // balance constraint
-            if (step.first->p->vl.size() < cells.size()/2) {
-                step.first->left = new pnode();
-                step.first->left->parent = step.first;
-                step.first->left->p = step.first->p->copy();
-                step.first->left->p->assign_left(*step.second);
-                s.push({step.first->left, step.second+1});
-            }
-
-            if (step.first->p->vr.size() < cells.size()/2) {
-                step.first->right = new pnode();
-                step.first->right->parent = step.first;
-                step.first->right->p = step.first->p->copy();
-                step.first->right->p->assign_right(*step.second);
-                s.push({step.first->right, step.second+1});
-            }
-        }
-    }
-
-    return root;
+    return nullptr;
 }
 
 void del_tree(pnode* root) {

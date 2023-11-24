@@ -32,7 +32,7 @@ namespace a3 {
 }
 
 struct pnode {
-    cell* cell;
+    vector<cell*>::iterator cell;
     a3::partition* p;
     pnode* parent;
     pnode* left;
