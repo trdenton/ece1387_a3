@@ -88,7 +88,8 @@ int main(int n, char** args) {
     }
 
     spdlog::info("Final solution cost: {}", best->cost());
-    spdlog::info("Visited nodes: {}", trav->visited_nodes);
+    unsigned long long int total_possible_nodes = (2<<(circ->get_n_cells()-1))-1;
+    spdlog::info("Visited/possible nodes: {}/{}", trav->visited_nodes, total_possible_nodes);
     
 
     if (interactive) {

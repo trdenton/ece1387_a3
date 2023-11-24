@@ -320,11 +320,11 @@ bool prune_basic_cost(a3::partition* test, a3::partition*& best) {
     bool ret = false;
     if (test->cost() < best->cost()) {
         if (test->unassigned.size() == 0) {
-            spdlog::info("found new best!");
+            spdlog::info("found new best! ({} > {})", test->cost(), best->cost());
             best = test;
         }
     } else {
-        spdlog::info("PRUNING ({} >= {})", test->cost(), best->cost());
+        spdlog::debug("PRUNING ({} >= {})", test->cost(), best->cost());
         ret = true;
     }
     return ret;
