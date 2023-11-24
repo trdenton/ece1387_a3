@@ -75,13 +75,20 @@ int main(int n, char** args) {
     circuit* circ = new circuit(file);
 
     a3::partition* best = new a3::partition(circ); 
+    spdlog::info("Building initial solution");
     best->initial_solution();
+    spdlog::info("Initial solution cost: {}", best->cost());
     
+    spdlog::info("Building decision tree");
     traverser* trav = new traverser(circ, best, prune_basic_cost);
+    spdlog::info("Traversing tree");
+    
 
     while (trav->bfs_step() != nullptr) {
     }
 
+    spdlog::info("Final solution cost: {}", best->cost());
+    spdlog::info("Visited nodes: {}", trav->visited_nodes);
     
 
     if (interactive) {

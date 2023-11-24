@@ -46,6 +46,7 @@ class traverser {
     a3::partition* best;
     bool (*prune)(a3::partition* test, a3::partition*& best);
     public:
+        long long unsigned int visited_nodes;
         traverser(circuit* c, a3::partition* best, bool (*prune_fn)(a3::partition* test, a3::partition*& best));
         ~traverser();
         pnode* bfs_step();

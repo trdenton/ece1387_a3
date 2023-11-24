@@ -218,6 +218,7 @@ pnode* traverser::bfs_step() {
         pnode* pn = q_bfs.front(); q_bfs.pop();
         //do thing
         spdlog::debug("visiting cell {}", pn->cell->label);
+        visited_nodes++;
         if (pn->left != nullptr) {
             if (!prune(pn->left->p, best)) {
                 q_bfs.push(pn->left);
@@ -235,6 +236,7 @@ pnode* traverser::bfs_step() {
 
 traverser::traverser(circuit* c, a3::partition* _best, bool (*prune_fn)(a3::partition* test, a3::partition*& best)) {
     cells = vector<cell*>(c->get_cells());
+    visited_nodes = 0;
     root = build_tree(c);
     q_bfs = queue<pnode*>();
     q_bfs.push(root);
@@ -318,11 +320,11 @@ bool prune_basic_cost(a3::partition* test, a3::partition*& best) {
     bool ret = false;
     if (test->cost() < best->cost()) {
         if (test->unassigned.size() == 0) {
-            spdlog::debug("found new best!");
+            spdlog::info("found new best!");
             best = test;
         }
     } else {
-        spdlog::debug("PRUNING");
+        spdlog::info("PRUNING ({} >= {})", test->cost(), best->cost());
         ret = true;
     }
     return ret;
