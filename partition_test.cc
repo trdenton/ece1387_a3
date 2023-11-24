@@ -102,6 +102,10 @@ TEST(Tree, init) {
     delete c;
 }
 
+bool never_prune(a3::partition* test, a3::partition*& best) {
+    return false;
+}
+
 TEST(Tree, bfs) {
     circuit* c = new circuit("../data/partition_test");
     a3::partition* p = new a3::partition(c);
@@ -111,8 +115,10 @@ TEST(Tree, bfs) {
     cell* c2 = c->get_cells()[1];
     cell* c3 = c->get_cells()[2];
     cell* c4 = c->get_cells()[3];
+
+    p->initial_solution();
     
-    traverser* t = new traverser(c);
+    traverser* t = new traverser(c, p, never_prune);
 
     pnode* pn = t->bfs_step();
     ASSERT_EQ(pn->cell, c2);
@@ -147,8 +153,6 @@ TEST(Tree, bfs) {
     ASSERT_EQ(pn->cell, c1);
     pn = t->bfs_step();
     ASSERT_EQ(pn->cell, c1);
-
-    
 
     delete t;
     delete p;

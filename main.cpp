@@ -8,6 +8,7 @@
 #include "easygl/graphics.h"
 #include "ui.h"
 #include "circuit.h"
+#include "partition.h"
 
 using namespace std;
 
@@ -73,6 +74,16 @@ int main(int n, char** args) {
 
     circuit* circ = new circuit(file);
 
+    a3::partition* best = new a3::partition(circ); 
+    best->initial_solution();
+    
+    traverser* trav = new traverser(circ, best, prune_basic_cost);
+
+    while (trav->bfs_step() != nullptr) {
+    }
+
+    
+
     if (interactive) {
         spdlog::info("Entering interactive mode");
         ui_init(circ);
@@ -80,6 +91,7 @@ int main(int n, char** args) {
     }
 
     spdlog::info("Exiting");
-    delete(circ);
+    delete trav;
+    delete circ;
     return 0;
 }

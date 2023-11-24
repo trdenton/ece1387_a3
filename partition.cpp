@@ -215,25 +215,31 @@ void a3::partition::initial_solution_random() {
 pnode* traverser::bfs_step() {
     pnode* rc = nullptr;
     if (!q_bfs.empty()) {
-        pnode* p = q_bfs.front(); q_bfs.pop();
+        pnode* pn = q_bfs.front(); q_bfs.pop();
         //do thing
-        spdlog::debug("visiting cell {}", p->cell->label);
-        if (p->left != nullptr) {
-            q_bfs.push(p->left);
+        spdlog::debug("visiting cell {}", pn->cell->label);
+        if (pn->left != nullptr) {
+            if (!prune(pn->left->p, best)) {
+                q_bfs.push(pn->left);
+            }
         }
-        if (p->right != nullptr) {
-            q_bfs.push(p->right);
+        if (pn->right != nullptr) {
+            if (!prune(pn->right->p, best)) {
+                q_bfs.push(pn->right);
+            }
         }
-        rc = p;
+        rc = pn;
     } 
     return rc;
 }
 
-traverser::traverser(circuit* c) {
+traverser::traverser(circuit* c, a3::partition* _best, bool (*prune_fn)(a3::partition* test, a3::partition*& best)) {
     cells = vector<cell*>(c->get_cells());
     root = build_tree(c);
     q_bfs = queue<pnode*>();
     q_bfs.push(root);
+    prune = prune_fn;
+    best = _best;
 }
 
 traverser::~traverser() {
@@ -261,7 +267,6 @@ pnode* build_tree(circuit* c) {
     while(!s.empty()) {
         std::pair<pnode*, vector<cell*>::iterator> step = s.top(); s.pop();
         step.first->cell = *step.second;
-        spdlog::debug("cell {}", (*step.second)->label);
         if (step.second < cells.end()-1) {
             step.first->left = new pnode();
             step.first->left->parent = step.first;
@@ -275,9 +280,6 @@ pnode* build_tree(circuit* c) {
 
             s.push({step.first->right, step.second+1});
             s.push({step.first->left, step.second+1});
-        } else {
-            // we've reached a leaf node
-            spdlog::debug("reached leaf node ({})", (*step.second)->label);
         }
     }
 
@@ -305,7 +307,23 @@ void del_tree(pnode* root) {
                 } 
             }
             s.pop();
+            delete pn->p;
             delete pn;
         }
     }
+}
+
+// returning true means we prune the tree at (test) and below
+bool prune_basic_cost(a3::partition* test, a3::partition*& best) {
+    bool ret = false;
+    if (test->cost() < best->cost()) {
+        if (test->unassigned.size() == 0) {
+            spdlog::debug("found new best!");
+            best = test;
+        }
+    } else {
+        spdlog::debug("PRUNING");
+        ret = true;
+    }
+    return ret;
 }
