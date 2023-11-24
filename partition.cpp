@@ -19,11 +19,19 @@ a3::partition::partition(circuit* c) {
     vr = vector<cell*>();
 }
 
+/*
+a3::partition::partition(vector<cell*> _cells) {
+    unassigned = vector<cell*>(_cells); 
+    vl = vector<cell*>();
+    vr = vector<cell*>();
+}
+*/
+
 a3::partition* a3::partition::copy() {
     a3::partition* p = new a3::partition(circ);
+    p->unassigned = vector<cell*>(unassigned);
     p->vl = vector<cell*>(vl);
     p->vr = vector<cell*>(vr);
-    p->unassigned = vector<cell*>(unassigned);
     return p;
 }
 
@@ -221,9 +229,9 @@ pnode* traverser::bfs_step() {
     return rc;
 }
 
-traverser::traverser(vector<cell*> _cells) {
-    cells = vector<cell*>(_cells);
-    root = build_tree(cells);
+traverser::traverser(circuit* c) {
+    cells = vector<cell*>(c->get_cells());
+    root = build_tree(c);
     q_bfs = queue<pnode*>();
     q_bfs.push(root);
 }
@@ -232,10 +240,10 @@ traverser::~traverser() {
     del_tree(root);
 }
 
-pnode* build_tree(vector<cell*> _cells) {
+pnode* build_tree(circuit* c) {
     pnode* root = new pnode();
     
-    vector<cell*> cells = vector<cell*>(_cells);
+    vector<cell*> cells = vector<cell*>(c->get_cells());
     std::sort(cells.begin(), cells.end(), cell_sort_most_nets);
     spdlog::debug("cells:");
 
@@ -245,6 +253,7 @@ pnode* build_tree(vector<cell*> _cells) {
     spdlog::debug("/cells");
     
     root->parent = nullptr;
+    root->p = new a3::partition(c);
     
     stack<std::pair<pnode*, vector<cell*>::iterator>> s;
     s.push({root, cells.begin()});
@@ -256,8 +265,14 @@ pnode* build_tree(vector<cell*> _cells) {
         if (step.second < cells.end()-1) {
             step.first->left = new pnode();
             step.first->left->parent = step.first;
+            step.first->left->p = step.first->p->copy();
+            step.first->left->p->assign_left(*step.second);
+
             step.first->right = new pnode();
             step.first->right->parent = step.first;
+            step.first->right->p = step.first->p->copy();
+            step.first->right->p->assign_right(*step.second);
+
             s.push({step.first->right, step.second+1});
             s.push({step.first->left, step.second+1});
         } else {

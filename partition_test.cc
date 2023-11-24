@@ -95,7 +95,7 @@ TEST(Tree, init) {
     a3::partition* p = new a3::partition(c);
     spdlog::set_level(spdlog::level::debug);
     
-    pnode* tree = build_tree(c->get_cells());
+    pnode* tree = build_tree(c);
 
     del_tree(tree);
     delete p;
@@ -112,26 +112,41 @@ TEST(Tree, bfs) {
     cell* c3 = c->get_cells()[2];
     cell* c4 = c->get_cells()[3];
     
-    traverser* t = new traverser(c->get_cells());
+    traverser* t = new traverser(c);
 
-    ASSERT_EQ(t->bfs_step()->cell, c2);
+    pnode* pn = t->bfs_step();
+    ASSERT_EQ(pn->cell, c2);
 
-    ASSERT_EQ(t->bfs_step()->cell, c3);
-    ASSERT_EQ(t->bfs_step()->cell, c3);
+    pn = t->bfs_step();
+    ASSERT_EQ(pn->cell, c3);
+    pn = t->bfs_step();
+    ASSERT_EQ(pn->cell, c3);
 
-    ASSERT_EQ(t->bfs_step()->cell, c4);
-    ASSERT_EQ(t->bfs_step()->cell, c4);
-    ASSERT_EQ(t->bfs_step()->cell, c4);
-    ASSERT_EQ(t->bfs_step()->cell, c4);
+    pn = t->bfs_step();
+    ASSERT_EQ(pn->cell, c4);
+    pn = t->bfs_step();
+    ASSERT_EQ(pn->cell, c4);
+    pn = t->bfs_step();
+    ASSERT_EQ(pn->cell, c4);
+    pn = t->bfs_step();
+    ASSERT_EQ(pn->cell, c4);
 
-    ASSERT_EQ(t->bfs_step()->cell, c1);
-    ASSERT_EQ(t->bfs_step()->cell, c1);
-    ASSERT_EQ(t->bfs_step()->cell, c1);
-    ASSERT_EQ(t->bfs_step()->cell, c1);
-    ASSERT_EQ(t->bfs_step()->cell, c1);
-    ASSERT_EQ(t->bfs_step()->cell, c1);
-    ASSERT_EQ(t->bfs_step()->cell, c1);
-    ASSERT_EQ(t->bfs_step()->cell, c1);
+    pn = t->bfs_step();
+    ASSERT_EQ(pn->cell, c1);
+    pn = t->bfs_step();
+    ASSERT_EQ(pn->cell, c1);
+    pn = t->bfs_step();
+    ASSERT_EQ(pn->cell, c1);
+    pn = t->bfs_step();
+    ASSERT_EQ(pn->cell, c1);
+    pn = t->bfs_step();
+    ASSERT_EQ(pn->cell, c1);
+    pn = t->bfs_step();
+    ASSERT_EQ(pn->cell, c1);
+    pn = t->bfs_step();
+    ASSERT_EQ(pn->cell, c1);
+    pn = t->bfs_step();
+    ASSERT_EQ(pn->cell, c1);
 
     
 

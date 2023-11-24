@@ -33,6 +33,7 @@ namespace a3 {
 
 struct pnode {
     cell* cell;
+    a3::partition* p;
     pnode* parent;
     pnode* left;
     pnode* right;
@@ -45,11 +46,11 @@ class traverser {
     vector<cell*> cells;
     public:
         pnode* bfs_step();
-        traverser(vector<cell*>);
+        traverser(circuit* c);
         ~traverser();
 };
 
 bool cell_sort_most_nets(cell* a, cell* b);
-pnode* build_tree(vector<cell*> _cells);
+pnode* build_tree(circuit* c);
 void del_tree(pnode* root);
 #endif
