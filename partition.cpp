@@ -270,18 +270,23 @@ pnode* build_tree(circuit* c) {
         std::pair<pnode*, vector<cell*>::iterator> step = s.top(); s.pop();
         step.first->cell = *step.second;
         if (step.second < cells.end()-1) {
-            step.first->left = new pnode();
-            step.first->left->parent = step.first;
-            step.first->left->p = step.first->p->copy();
-            step.first->left->p->assign_left(*step.second);
 
-            step.first->right = new pnode();
-            step.first->right->parent = step.first;
-            step.first->right->p = step.first->p->copy();
-            step.first->right->p->assign_right(*step.second);
+            // balance constraint
+            if (step.first->p->vl.size() < cells.size()/2) {
+                step.first->left = new pnode();
+                step.first->left->parent = step.first;
+                step.first->left->p = step.first->p->copy();
+                step.first->left->p->assign_left(*step.second);
+                s.push({step.first->left, step.second+1});
+            }
 
-            s.push({step.first->right, step.second+1});
-            s.push({step.first->left, step.second+1});
+            if (step.first->p->vr.size() < cells.size()/2) {
+                step.first->right = new pnode();
+                step.first->right->parent = step.first;
+                step.first->right->p = step.first->p->copy();
+                step.first->right->p->assign_right(*step.second);
+                s.push({step.first->right, step.second+1});
+            }
         }
     }
 
@@ -318,6 +323,7 @@ void del_tree(pnode* root) {
 // returning true means we prune the tree at (test) and below
 bool prune_basic_cost(a3::partition* test, a3::partition*& best) {
     bool ret = false;
+
     if (test->cost() < best->cost()) {
         if (test->unassigned.size() == 0) {
             spdlog::info("found new best! ({} > {})", test->cost(), best->cost());
