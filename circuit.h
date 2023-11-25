@@ -35,12 +35,12 @@ class net {
 
 class cell {
     private:
-        double x;
-        double y;
         bool fixed;
         unordered_set<string> net_labels;
 
     public:
+        double x;
+        double y;
         string label;
         cell(vector<string> s);
         void connect(cell* other);

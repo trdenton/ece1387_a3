@@ -19,14 +19,6 @@ a3::partition::partition(circuit* c) {
     vr = vector<cell*>();
 }
 
-/*
-a3::partition::partition(vector<cell*> _cells) {
-    unassigned = vector<cell*>(_cells); 
-    vl = vector<cell*>();
-    vr = vector<cell*>();
-}
-*/
-
 a3::partition* a3::partition::copy() {
     a3::partition* p = new a3::partition(circ);
     p->unassigned = vector<cell*>(unassigned);
@@ -223,7 +215,7 @@ pnode* traverser::bfs_step() {
         if (pn->cell < cells.end()-1) {
 
             // balance constraint
-            if (pn->p->vl.size() < cells.size()/2) {
+            if (!prune_imbalance || pn->p->vl.size() < cells.size()/2 - 1) {
                 pn->left = new pnode();
                 pn->left->cell = pn->cell + 1;
                 pn->left->parent = pn;
@@ -232,10 +224,12 @@ pnode* traverser::bfs_step() {
                 if (!prune(pn->left->p, best)) {
                     q_bfs.push(pn->left);
                 }
+            } else {
+                spdlog::debug("pruning: imbalance");
             }
 
             // balance constraint
-            if (pn->p->vl.size() < cells.size()/2) {
+            if (!prune_imbalance || pn->p->vl.size() < cells.size()/2 - 1) {
                 pn->right = new pnode();
                 pn->right->cell = pn->cell + 1;
                 pn->right->parent = pn;
@@ -244,6 +238,8 @@ pnode* traverser::bfs_step() {
                 if (!prune(pn->right->p, best)) {
                     q_bfs.push(pn->right);
                 }
+            } else {
+                spdlog::debug("pruning: imbalance");
             }
 
         }
@@ -253,10 +249,22 @@ pnode* traverser::bfs_step() {
     return rc;
 }
 
+void traverser::assign_y_coords_to_cells() {
+    double y = CELL_DIAMETER/2.0;
+    for(auto& cell: cells) {
+        cell->y = y;
+        y += CELL_DIAMETER*2.0;
+    }
+}
+
 traverser::traverser(circuit* c, a3::partition* _best, bool (*prune_fn)(a3::partition* test, a3::partition*& best)) {
     cells = vector<cell*>(c->get_cells());
     std::sort(cells.begin(), cells.end(), cell_sort_most_nets);
+    assign_y_coords_to_cells();
     visited_nodes = 0;
+
+    // only turn this off for test mode
+    prune_imbalance = true;
 
     root = new pnode();
     root->parent = nullptr;
@@ -273,10 +281,6 @@ traverser::traverser(circuit* c, a3::partition* _best, bool (*prune_fn)(a3::part
 
 traverser::~traverser() {
     del_tree(root);
-}
-
-pnode* build_tree(circuit* c) {
-    return nullptr;
 }
 
 void del_tree(pnode* root) {

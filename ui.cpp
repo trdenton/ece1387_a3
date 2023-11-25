@@ -38,7 +38,7 @@ void ui_init(circuit* circuit) {
     init_graphics("A1", BLACK);
     create_button("Proceed","TOGGLE RAT", ui_toggle_rat);
     create_button("TOGGLE RAT","TOGGLE CELL", ui_toggle_cell);
-    init_world(-1.,26.,26.,-1.);
+    init_world(-1.,circ->get_display_width(),circ->get_display_height(),-1.);
     set_keypress_input(true);
     //set_mouse_move_input(true);
 
@@ -76,10 +76,10 @@ void ui_draw_cell_fn(circuit* circ, cell* c) {
     double height = width;
     // center at the cells coords
     double x = 0;
-    double y = 0; //TODO
+    double y = c->y;
 
     setlinewidth(2);
-    drawarc(x,y,width/2.,0.,360.);
+    drawarc(x,y,CELL_DIAMETER/2.,0.,360.);
     setlinewidth(1);
 }
 
@@ -129,3 +129,5 @@ void ui_draw(circuit* circ) {
     if (draw_cells)
         ui_draw_cells(circ);
 }
+
+

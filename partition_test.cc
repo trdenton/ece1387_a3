@@ -89,18 +89,6 @@ void test_circuit_against_random(string f){
     delete c;
 }
 
-TEST(Tree, init) {
-
-    circuit* c = new circuit("../data/partition_test");
-    a3::partition* p = new a3::partition(c);
-    spdlog::set_level(spdlog::level::debug);
-    
-    pnode* tree = build_tree(c);
-
-    del_tree(tree);
-    delete p;
-    delete c;
-}
 
 bool never_prune(a3::partition* test, a3::partition*& best) {
     return false;
@@ -119,6 +107,7 @@ TEST(Tree, bfs) {
     p->initial_solution();
     
     traverser* t = new traverser(c, p, never_prune);
+    t->prune_imbalance = false;
 
     pnode* pn = t->bfs_step();
     ASSERT_EQ(*pn->cell, c2);
@@ -154,11 +143,52 @@ TEST(Tree, bfs) {
     pn = t->bfs_step();
     ASSERT_EQ(*pn->cell, c1);
 
+    ASSERT_EQ(t->bfs_step(),nullptr);
+
     delete t;
     delete p;
     delete c;
 }
 
+TEST(Tree, bfs_prune_imbalance) {
+    circuit* c = new circuit("../data/partition_test");
+    a3::partition* p = new a3::partition(c);
+    spdlog::set_level(spdlog::level::debug);
+
+    cell* c1 = c->get_cells()[0];
+    cell* c2 = c->get_cells()[1];
+    cell* c3 = c->get_cells()[2];
+    cell* c4 = c->get_cells()[3];
+
+    p->initial_solution();
+    
+    traverser* t = new traverser(c, p, never_prune);
+    t->prune_imbalance = true;
+
+    pnode* pn = t->bfs_step();
+    ASSERT_EQ(*pn->cell, c2);
+
+    pn = t->bfs_step();
+    ASSERT_EQ(*pn->cell, c3);
+    pn = t->bfs_step();
+    ASSERT_EQ(*pn->cell, c3);
+
+    pn = t->bfs_step();
+    ASSERT_EQ(*pn->cell, c4);
+    pn = t->bfs_step();
+    ASSERT_EQ(*pn->cell, c4);
+
+    pn = t->bfs_step();
+    ASSERT_EQ(*pn->cell, c1);
+    pn = t->bfs_step();
+    ASSERT_EQ(*pn->cell, c1);
+
+    ASSERT_EQ(t->bfs_step(),nullptr);
+
+    delete t;
+    delete p;
+    delete c;
+}
 TEST(Partition, unassign_cell) {
 
     circuit* c = new circuit("../data/cct1");

@@ -44,8 +44,10 @@ class traverser {
     queue<pnode*> q_bfs;
     vector<cell*> cells;
     a3::partition* best;
+    void assign_y_coords_to_cells();
     bool (*prune)(a3::partition* test, a3::partition*& best);
     public:
+        bool prune_imbalance;
         long long unsigned int visited_nodes;
         traverser(circuit* c, a3::partition* best, bool (*prune_fn)(a3::partition* test, a3::partition*& best));
         ~traverser();
@@ -53,7 +55,6 @@ class traverser {
 };
 
 bool cell_sort_most_nets(cell* a, cell* b);
-pnode* build_tree(circuit* c);
 void del_tree(pnode* root);
 bool prune_basic_cost(a3::partition* test, a3::partition*& best);
 #endif
