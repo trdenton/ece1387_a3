@@ -17,6 +17,7 @@ void ui_key_handler(char c);
 float logic_cell_width = 10.0;
 
 circuit* circ;
+traverser* trav;
 
 bool draw_cells = true;
 bool draw_rats_nest = true;
@@ -32,8 +33,9 @@ void ui_toggle_cell(void(*draw)()) {
     draw();
 }
 
-void ui_init(circuit* circuit) {
+void ui_init(circuit* circuit, traverser* t) {
     circ = circuit;
+    trav = t;
     spdlog::info("Init UI");
     init_graphics("A1", BLACK);
     create_button("Proceed","TOGGLE RAT", ui_toggle_rat);
@@ -51,7 +53,7 @@ void ui_teardown() {
 
 void ui_drawscreen() {
     set_draw_mode (DRAW_NORMAL);  // Should set this if your program does any XOR drawing in callbacks.
-    ui_draw(circ);
+    ui_draw(circ, trav);
 }
 
 void ui_click_handler (float x, float y) {
@@ -123,11 +125,22 @@ void ui_draw_rats_nest(circuit* circ){
     circ->foreach_net( ui_draw_net_fn );
 }
 
-void ui_draw(circuit* circ) {
-    if (draw_rats_nest)
-        ui_draw_rats_nest(circ);
-    if (draw_cells)
-        ui_draw_cells(circ);
+void ui_draw_traverser(traverser* t) {
+    static vector<pnode*>::iterator last_drawn; // TODO we can move this to file static and reset it when needed
+    vector<pnode*>::iterator end = t->pnodes.end();
+    for(auto& it = last_drawn; it < end; ++it) {
+        setcolor(GREEN);
+        setlinewidth(2);
+        drawarc((*it)->x,(*it)->y,PNODE_DIAMETER/2.,0.,360.);
+        setcolor(WHITE);
+        setlinewidth(1);
+        drawline((*it)->x,(*it)->y,(*it)->parent->x, (*it)->parent->y);
+    }
+    last_drawn = end;
+}
+
+void ui_draw(circuit* circ, traverser* t) {
+    ui_draw_traverser(t);
 }
 
 

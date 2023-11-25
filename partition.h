@@ -5,6 +5,8 @@
 #include <vector>
 #include <stack>
 
+const double PNODE_DIAMETER = 1.0;
+
 namespace a3 {
     struct partition {
     private:
@@ -34,6 +36,8 @@ namespace a3 {
 struct pnode {
     vector<cell*>::iterator cell;
     a3::partition* p;
+    double x;
+    double y;
     pnode* parent;
     pnode* left;
     pnode* right;
@@ -41,13 +45,14 @@ struct pnode {
 
 class traverser {
     pnode* root;
+    circuit* circ;
     queue<pnode*> q_bfs;
     vector<cell*> cells;
     a3::partition* best;
-    void assign_y_coords_to_cells();
     bool (*prune)(a3::partition* test, a3::partition*& best);
     public:
         bool prune_imbalance;
+        vector<pnode*> pnodes;
         long long unsigned int visited_nodes;
         traverser(circuit* c, a3::partition* best, bool (*prune_fn)(a3::partition* test, a3::partition*& best));
         ~traverser();

@@ -217,12 +217,15 @@ pnode* traverser::bfs_step() {
             // balance constraint
             if (!prune_imbalance || pn->p->vl.size() < cells.size()/2 - 1) {
                 pn->left = new pnode();
+                pn->left->y = pn->y + 2.0*PNODE_DIAMETER;
+                pn->left->x = pn->x - PNODE_DIAMETER;
                 pn->left->cell = pn->cell + 1;
                 pn->left->parent = pn;
                 pn->left->p = pn->p->copy();
                 pn->left->p->assign_left(*(pn->cell + 1));
                 if (!prune(pn->left->p, best)) {
                     q_bfs.push(pn->left);
+                    pnodes.push_back(pn->left);
                 }
             } else {
                 spdlog::debug("pruning: imbalance");
@@ -231,36 +234,30 @@ pnode* traverser::bfs_step() {
             // balance constraint
             if (!prune_imbalance || pn->p->vl.size() < cells.size()/2 - 1) {
                 pn->right = new pnode();
+                pn->right->y = pn->y + 2.0*PNODE_DIAMETER;
+                pn->right->x = pn->x + PNODE_DIAMETER;
                 pn->right->cell = pn->cell + 1;
                 pn->right->parent = pn;
                 pn->right->p = pn->p->copy();
                 pn->right->p->assign_right(*(pn->cell + 1));
                 if (!prune(pn->right->p, best)) {
                     q_bfs.push(pn->right);
+                    pnodes.push_back(pn->right);
                 }
             } else {
                 spdlog::debug("pruning: imbalance");
             }
 
         }
-
         rc = pn;
     } 
     return rc;
 }
 
-void traverser::assign_y_coords_to_cells() {
-    double y = CELL_DIAMETER/2.0;
-    for(auto& cell: cells) {
-        cell->y = y;
-        y += CELL_DIAMETER*2.0;
-    }
-}
-
 traverser::traverser(circuit* c, a3::partition* _best, bool (*prune_fn)(a3::partition* test, a3::partition*& best)) {
     cells = vector<cell*>(c->get_cells());
+    circ = c;
     std::sort(cells.begin(), cells.end(), cell_sort_most_nets);
-    assign_y_coords_to_cells();
     visited_nodes = 0;
 
     // only turn this off for test mode
@@ -268,6 +265,8 @@ traverser::traverser(circuit* c, a3::partition* _best, bool (*prune_fn)(a3::part
 
     root = new pnode();
     root->parent = nullptr;
+    root->y = PNODE_DIAMETER/2.0;
+    root->x = circ->get_display_width()/2.0;
     root->cell = cells.begin();
     root->p = new a3::partition(c);
     
