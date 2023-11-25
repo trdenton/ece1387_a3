@@ -121,38 +121,38 @@ TEST(Tree, bfs) {
     traverser* t = new traverser(c, p, never_prune);
 
     pnode* pn = t->bfs_step();
-    ASSERT_EQ(pn->cell, c2);
+    ASSERT_EQ(*pn->cell, c2);
 
     pn = t->bfs_step();
-    ASSERT_EQ(pn->cell, c3);
+    ASSERT_EQ(*pn->cell, c3);
     pn = t->bfs_step();
-    ASSERT_EQ(pn->cell, c3);
+    ASSERT_EQ(*pn->cell, c3);
 
     pn = t->bfs_step();
-    ASSERT_EQ(pn->cell, c4);
+    ASSERT_EQ(*pn->cell, c4);
     pn = t->bfs_step();
-    ASSERT_EQ(pn->cell, c4);
+    ASSERT_EQ(*pn->cell, c4);
     pn = t->bfs_step();
-    ASSERT_EQ(pn->cell, c4);
+    ASSERT_EQ(*pn->cell, c4);
     pn = t->bfs_step();
-    ASSERT_EQ(pn->cell, c4);
+    ASSERT_EQ(*pn->cell, c4);
 
     pn = t->bfs_step();
-    ASSERT_EQ(pn->cell, c1);
+    ASSERT_EQ(*pn->cell, c1);
     pn = t->bfs_step();
-    ASSERT_EQ(pn->cell, c1);
+    ASSERT_EQ(*pn->cell, c1);
     pn = t->bfs_step();
-    ASSERT_EQ(pn->cell, c1);
+    ASSERT_EQ(*pn->cell, c1);
     pn = t->bfs_step();
-    ASSERT_EQ(pn->cell, c1);
+    ASSERT_EQ(*pn->cell, c1);
     pn = t->bfs_step();
-    ASSERT_EQ(pn->cell, c1);
+    ASSERT_EQ(*pn->cell, c1);
     pn = t->bfs_step();
-    ASSERT_EQ(pn->cell, c1);
+    ASSERT_EQ(*pn->cell, c1);
     pn = t->bfs_step();
-    ASSERT_EQ(pn->cell, c1);
+    ASSERT_EQ(*pn->cell, c1);
     pn = t->bfs_step();
-    ASSERT_EQ(pn->cell, c1);
+    ASSERT_EQ(*pn->cell, c1);
 
     delete t;
     delete p;

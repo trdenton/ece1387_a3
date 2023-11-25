@@ -52,6 +52,7 @@ class cell {
         cell(vector<cell*> cells);
 };
 
+const double CELL_DIAMETER = 10.0;
 class circuit {
     private:
         vector<cell*> cells;
@@ -71,5 +72,7 @@ class circuit {
         void foreach_cell(void (*fn)(circuit* circ, cell* c));
         void foreach_net(void (*fn)(circuit* circ, net* n));
         vector<cell*> get_cells() {return cells;};
+        double get_display_width();
+        double get_display_height();
 };
 #endif

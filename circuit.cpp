@@ -104,6 +104,14 @@ void circuit::foreach_net(void (*fn)(circuit* circ, net* c)) {
     }
 }
 
+double circuit::get_display_width() {
+    return CELL_DIAMETER*(double)(2<<(get_n_cells()-1));
+}
+
+double circuit::get_display_height() {
+    return CELL_DIAMETER*(double)(get_n_cells());
+}
+
 /****
 *
 * cell class functions
