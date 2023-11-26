@@ -257,7 +257,7 @@ pnode* traverser::bfs_step() {
         if (pn->cell < cells.end()-1) {
 
             // balance constraint
-            if (!prune_imbalance || (pn->p->vl.size() < cells.size()/2 - 1)) {
+            if (!prune_imbalance || (pn->p->vl.size() < cells.size()/2 )) {
                 pn->left = new pnode();
                 
                 // UI drawing related
@@ -279,7 +279,7 @@ pnode* traverser::bfs_step() {
             }
 
             // balance constraint
-            if (!prune_imbalance || (pn->p->vr.size() < cells.size()/2 - 1)) {
+            if (!prune_imbalance || (pn->p->vr.size() < cells.size()/2 )) {
                 pn->right = new pnode();
                 
                 // UI drawing related

@@ -177,7 +177,19 @@ TEST(Tree, bfs_prune_imbalance) {
     ASSERT_EQ(*pn->cell, c4);
     pn = t->bfs_step();
     ASSERT_EQ(*pn->cell, c4);
+    pn = t->bfs_step();
+    ASSERT_EQ(*pn->cell, c4);
+    pn = t->bfs_step();
+    ASSERT_EQ(*pn->cell, c4);
 
+    pn = t->bfs_step();
+    ASSERT_EQ(*pn->cell, c1);
+    pn = t->bfs_step();
+    ASSERT_EQ(*pn->cell, c1);
+    pn = t->bfs_step();
+    ASSERT_EQ(*pn->cell, c1);
+    pn = t->bfs_step();
+    ASSERT_EQ(*pn->cell, c1);
     pn = t->bfs_step();
     ASSERT_EQ(*pn->cell, c1);
     pn = t->bfs_step();
