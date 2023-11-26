@@ -24,6 +24,8 @@ a3::partition* a3::partition::copy() {
     p->unassigned = vector<cell*>(unassigned);
     p->vl = vector<cell*>(vl);
     p->vr = vector<cell*>(vr);
+    p->cut_nets = vector<string>(cut_nets);
+    p->cost = cost;
     return p;
 }
 
@@ -45,11 +47,19 @@ bool a3::partition::assign(vector<cell*>& v, cell* c) {
 }
 
 bool a3::partition::assign_left(cell* c) {
-    return assign(vl, c);
+    bool ret = assign(vl, c);
+    std::pair<int,int> costs = incr_costs(c);
+    if (ret)
+        cost += costs.first;
+    return ret;
 }
 
 bool a3::partition::assign_right(cell* c) {
-    return assign(vr, c);
+    bool ret = assign(vr, c);
+    std::pair<int,int> costs = incr_costs(c);
+    if (ret)
+        cost += costs.second;
+    return ret;
 }
 
 bool a3::partition::_unassign(vector<cell*>& v, cell* c) {
@@ -93,11 +103,41 @@ cell* a3::partition::make_right_supercell() {
     return new cell(vr);
 }
 
+std::pair<int,int> a3::partition::incr_costs(cell* c) {
+    // iterate over every net.  See if it has cells on the right that would cut nets
+    int cost_left = 0;
+    int cost_right = 0;
+    for (auto& n: c->get_net_labels()) {
+        if (std::find(cut_nets.begin(),cut_nets.end(),n)!=cut_nets.end())
+            continue;
+        // n.first is the string label
+        // n.second is the net object
+        for (auto& cl : circ->get_net(n)->get_cell_labels()) {
+            cell* c = circ->get_cell(cl);
+            if (std::find(vr.begin(), vr.end(), c) != vr.end()) {
+                cost_left++;
+            } else if (std::find(vl.begin(), vl.end(), c) != vl.end()) {
+                cost_right++;
+            }
+        }
+    }
+    return std::pair<int,int>(cost_left, cost_right);
+}
 
-int a3::partition::cost() {
+/*
+MODIFIES STATE
+
+changes the current cut set
+changes the current cost
+*/
+int a3::partition::calculate_cost() {
     // iterate over every net.  See if it has cells in both left and right
-    int cost = 0;
+    cost = 0;
+    cut_nets = vector<string>();
     for (auto& n: circ->get_nets()) {
+        // if weve already cut a net, you cant cut it more...
+        if (std::find(cut_nets.begin(),cut_nets.end(),n.first) != cut_nets.end())
+            continue;
         // n.first is the string label
         // n.second is the net object
         bool found_in_left = false;
@@ -112,6 +152,7 @@ int a3::partition::cost() {
             }
             if (found_in_left && found_in_right) {
                 //spdlog::debug("net {} is in the cut set", n.first);
+                cut_nets.push_back(n.first);
                 cost++;
                 break;
             }
@@ -123,7 +164,7 @@ int a3::partition::cost() {
 // lower bound function
 // right now - just use the number of cut nets
 int a3::partition::lb() {
-    return cost();
+    return cost;
 }
 
 bool cell_sort_most_nets(cell* a, cell* b) {
@@ -185,6 +226,7 @@ void a3::partition::initial_solution() {
         insert_right = !insert_right;
         delete g_supercell;
     }
+    calculate_cost();
 }
 
 void a3::partition::initial_solution_random() {
@@ -202,6 +244,7 @@ void a3::partition::initial_solution_random() {
 
         insert_right = !insert_right;
     }
+    calculate_cost();
 }
 
 pnode* traverser::bfs_step() {
@@ -211,7 +254,6 @@ pnode* traverser::bfs_step() {
 
 
         visited_nodes++;
-        spdlog::debug("visiting cell {}", (*pn->cell)->label);
         if (pn->cell < cells.end()-1) {
 
             // balance constraint
@@ -325,13 +367,13 @@ void del_tree(pnode* root) {
 bool prune_basic_cost(a3::partition* test, a3::partition*& best) {
     bool ret = false;
 
-    if (test->cost() < best->cost()) {
+    if (test->cost < best->cost) {
         if (test->unassigned.size() == 0) {
-            spdlog::info("found new best! ({} > {})", test->cost(), best->cost());
+            spdlog::info("found new best! ({} > {})", test->cost, best->cost);
             best = test;
         }
     } else {
-        spdlog::debug("PRUNING ({} >= {})", test->cost(), best->cost());
+        spdlog::debug("PRUNING ({} >= {})", test->cost, best->cost);
         ret = true;
     }
     return ret;

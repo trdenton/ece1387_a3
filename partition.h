@@ -17,9 +17,12 @@ namespace a3 {
         vector<cell*> vl;
         vector<cell*> unassigned;
         circuit* circ;
+        int cost;
 
+        std::pair<int,int> incr_costs(cell* c);
         partition(circuit*);
-        int cost();
+        int calculate_cost();
+        vector<string> cut_nets;
         bool assign(vector<cell*>&, cell*);
         bool assign_left(cell* c);
         bool assign_right(cell* c);

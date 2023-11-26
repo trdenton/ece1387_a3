@@ -36,6 +36,9 @@ FetchContent_MakeAvailable(googletest)
 add_compile_definitions(PLATFORM=X11)
 add_compile_options(-Wno-deprecated-declarations)
 
+# gprof
+#add_compile_options(-pg)
+
 FetchContent_GetProperties(spdlog)
 if (NOT spdlog_POPULATED)
     FetchContent_Populate(spdlog)

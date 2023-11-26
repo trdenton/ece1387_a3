@@ -21,18 +21,18 @@ TEST(Partition, test_assign) {
     ASSERT_TRUE(p->assign_left(c1));
     ASSERT_FALSE(p->assign_left(c1)); // should only go in once
     ASSERT_FALSE(p->assign_right(c1)); // should only go in once
-    ASSERT_EQ(p->cost(), 0);
+    ASSERT_EQ(p->cost, 0);
 
     ASSERT_TRUE(p->assign_right(c2));
-    ASSERT_EQ(p->cost(), 1); // 1 and 2 only share one net (a),  hence size of cut set is 1
+    ASSERT_EQ(p->cost, 1); // 1 and 2 only share one net (a),  hence size of cut set is 1
 
     // put cell 3 in the same as 2, should not increase cost
     ASSERT_TRUE(p->assign_right(c3));
-    ASSERT_EQ(p->cost(), 1); 
+    ASSERT_EQ(p->cost, 1); 
 
     // put cell 4 in the opposite as 3 for incremental cost 1
     ASSERT_TRUE(p->assign_left(c4));
-    ASSERT_EQ(p->cost(), 2);
+    ASSERT_EQ(p->cost, 2);
     
 
     delete p;
@@ -68,13 +68,13 @@ void test_circuit_against_random(string f){
     a3::partition* p_blank = new a3::partition(c);
     p->initial_solution();
 
-    spdlog::info("score from initial solution: {}", p->cost());
+    spdlog::info("score from initial solution: {}", p->cost);
 
     vector<int> rand_scores(0);
     for(int i = 0; i < 10; ++i) {
         a3::partition* p_rand = p_blank->copy();
         p_rand->initial_solution_random();
-        rand_scores.push_back(p_rand->cost());
+        rand_scores.push_back(p_rand->cost);
         delete p_rand;
     }
 
