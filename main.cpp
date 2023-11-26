@@ -28,6 +28,18 @@ void print_version() {
     spdlog::info("Built {}" , __TIMESTAMP__);
 }
 
+pnode* run(circuit* c, traverser* t) {
+    static vector<cell*> seen;
+    pnode* p = t->bfs_step();
+    if (p != nullptr) {
+        if (std::find(seen.begin(), seen.end(), *p->cell) == seen.end()) {
+            seen.push_back( *p->cell ); 
+            spdlog::info("at level {}/{}", seen.size(), c->get_n_cells());
+        }
+    }
+    return p;
+}
+
 int main(int n, char** args) {
     string file = "";
 
@@ -82,18 +94,13 @@ int main(int n, char** args) {
     traverser* trav = new traverser(circ, best, prune_basic_cost);
     spdlog::info("Traversing decision tree");
     
-    vector<cell*> seen;
 
-    pnode* p;
-    do {
-        if (p != nullptr) {
-            if (std::find(seen.begin(), seen.end(), *p->cell) == seen.end()) {
-                seen.push_back( *p->cell ); 
-                spdlog::info("at level {}/{}", seen.size(), circ->get_n_cells());
-            }
-        }
-        p = trav->bfs_step();
-    } while (p != nullptr);
+    if (interactive) {
+        spdlog::info("Entering interactive mode");
+        ui_init(circ, trav, run);
+    } else {
+        while (run(circ,trav) != nullptr) {}
+    }
 
     spdlog::info("Final solution cost: {}", best->cost());
     unsigned long long int total_possible_nodes = (2<<(circ->get_n_cells()-1))-1;
@@ -101,8 +108,6 @@ int main(int n, char** args) {
     
 
     if (interactive) {
-        spdlog::info("Entering interactive mode");
-        ui_init(circ, trav);
         ui_teardown();
     }
 

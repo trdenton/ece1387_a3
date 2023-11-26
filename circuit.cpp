@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <iterator>
 #include "spdlog/spdlog.h"
+#include "partition.h"
 #include <thread>
 #include <unistd.h>
 #include <condition_variable>
@@ -105,11 +106,11 @@ void circuit::foreach_net(void (*fn)(circuit* circ, net* c)) {
 }
 
 double circuit::get_display_width() {
-    return CELL_DIAMETER*(double)(2<<(get_n_cells()-1));
+    return PNODE_DIAMETER*(double)(2<<(get_n_cells()-1));
 }
 
 double circuit::get_display_height() {
-    return CELL_DIAMETER*(double)(get_n_cells());
+    return PNODE_DIAMETER*(double)(get_n_cells());
 }
 
 /****

@@ -111,7 +111,7 @@ int a3::partition::cost() {
                 found_in_right = true;
             }
             if (found_in_left && found_in_right) {
-                spdlog::debug("net {} is in the cut set", n.first);
+                //spdlog::debug("net {} is in the cut set", n.first);
                 cost++;
                 break;
             }
@@ -215,7 +215,7 @@ pnode* traverser::bfs_step() {
         if (pn->cell < cells.end()-1) {
 
             // balance constraint
-            if (!prune_imbalance || pn->p->vl.size() < cells.size()/2 - 1) {
+            if (!prune_imbalance || (pn->p->vl.size() < cells.size()/2 - 1)) {
                 pn->left = new pnode();
                 pn->left->y = pn->y + 2.0*PNODE_DIAMETER;
                 pn->left->x = pn->x - PNODE_DIAMETER;
@@ -232,7 +232,7 @@ pnode* traverser::bfs_step() {
             }
 
             // balance constraint
-            if (!prune_imbalance || pn->p->vl.size() < cells.size()/2 - 1) {
+            if (!prune_imbalance || (pn->p->vr.size() < cells.size()/2 - 1)) {
                 pn->right = new pnode();
                 pn->right->y = pn->y + 2.0*PNODE_DIAMETER;
                 pn->right->x = pn->x + PNODE_DIAMETER;

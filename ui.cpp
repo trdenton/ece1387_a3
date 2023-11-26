@@ -19,6 +19,8 @@ float logic_cell_width = 10.0;
 circuit* circ;
 traverser* trav;
 
+pnode* (*run_fn)(circuit*, traverser*);
+
 bool draw_cells = true;
 bool draw_rats_nest = true;
 
@@ -33,8 +35,8 @@ void ui_toggle_cell(void(*draw)()) {
     draw();
 }
 
-void ui_init(circuit* circuit, traverser* t) {
-    circ = circuit;
+void ui_init(circuit* c, traverser* t, pnode* (*cb)(circuit*, traverser*)) {
+    circ = c;
     trav = t;
     spdlog::info("Init UI");
     init_graphics("A1", BLACK);
@@ -42,9 +44,11 @@ void ui_init(circuit* circuit, traverser* t) {
     create_button("TOGGLE RAT","TOGGLE CELL", ui_toggle_cell);
     init_world(-1.,circ->get_display_width(),circ->get_display_height(),-1.);
     set_keypress_input(true);
+    run_fn = cb;
     //set_mouse_move_input(true);
 
-    event_loop(ui_click_handler, ui_mouse_handler, ui_key_handler, ui_drawscreen);   
+    set_interval(1000000);
+    event_loop(ui_click_handler, ui_mouse_handler, ui_key_handler, ui_drawscreen);
 }
 
 void ui_teardown() {
@@ -53,6 +57,9 @@ void ui_teardown() {
 
 void ui_drawscreen() {
     set_draw_mode (DRAW_NORMAL);  // Should set this if your program does any XOR drawing in callbacks.
+    pnode* p = run_fn(circ, trav);
+    //if (p != nullptr)
+    //    ui_draw_pnode(p);
     ui_draw(circ, trav);
 }
 
@@ -125,21 +132,28 @@ void ui_draw_rats_nest(circuit* circ){
     circ->foreach_net( ui_draw_net_fn );
 }
 
-void ui_draw_traverser(traverser* t) {
-    static vector<pnode*>::iterator last_drawn; // TODO we can move this to file static and reset it when needed
-    vector<pnode*>::iterator end = t->pnodes.end();
-    for(auto& it = last_drawn; it < end; ++it) {
-        setcolor(GREEN);
-        setlinewidth(2);
-        drawarc((*it)->x,(*it)->y,PNODE_DIAMETER/2.,0.,360.);
-        setcolor(WHITE);
-        setlinewidth(1);
-        drawline((*it)->x,(*it)->y,(*it)->parent->x, (*it)->parent->y);
+void ui_draw_pnode(pnode* p) {
+    setcolor(GREEN);
+    setlinewidth(2);
+    drawarc(p->x,p->y,PNODE_DIAMETER/2.,0.,360.);
+    setcolor(WHITE);
+    setlinewidth(1);
+    if(p->parent != nullptr) {
+        drawline(p->x, p->y, p->parent->x, p->parent->y);
     }
-    last_drawn = end;
+}
+
+void ui_draw_traverser(traverser* t) {
+    for(auto& it : t->pnodes) {
+        ui_draw_pnode(it);
+    }
 }
 
 void ui_draw(circuit* circ, traverser* t) {
+    static int count = 0;
+    count++;
+    //if (count%100 == 0)
+        clearscreen();
     ui_draw_traverser(t);
 }
 
