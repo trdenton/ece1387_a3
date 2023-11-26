@@ -42,12 +42,12 @@ void ui_init(circuit* c, traverser* t, pnode* (*cb)(circuit*, traverser*)) {
     init_graphics("A1", BLACK);
     create_button("Proceed","TOGGLE RAT", ui_toggle_rat);
     create_button("TOGGLE RAT","TOGGLE CELL", ui_toggle_cell);
-    init_world(-1.,circ->get_display_width(),circ->get_display_height(),-1.);
+    init_world(0.,circ->get_display_width(),circ->get_display_height(),0.);
     set_keypress_input(true);
     run_fn = cb;
     //set_mouse_move_input(true);
 
-    set_interval(1000000);
+    set_interval(1000);
     event_loop(ui_click_handler, ui_mouse_handler, ui_key_handler, ui_drawscreen);
 }
 
@@ -135,12 +135,15 @@ void ui_draw_rats_nest(circuit* circ){
 void ui_draw_pnode(pnode* p) {
     setcolor(GREEN);
     setlinewidth(2);
-    drawarc(p->x,p->y,PNODE_DIAMETER/2.,0.,360.);
+    drawarc(p->x,p->y,PNODE_DIAMETER,0.,360.);
     setcolor(WHITE);
     setlinewidth(1);
     if(p->parent != nullptr) {
         drawline(p->x, p->y, p->parent->x, p->parent->y);
     }
+    char buf[32] = {0};
+    snprintf(buf,32,"%d",p->level);
+    drawtext(p->x, p->y, buf, PNODE_DIAMETER);
 }
 
 void ui_draw_traverser(traverser* t) {

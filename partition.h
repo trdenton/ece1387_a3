@@ -5,7 +5,7 @@
 #include <vector>
 #include <stack>
 
-const double PNODE_DIAMETER = 1.0;
+const double PNODE_DIAMETER = 10.0;
 
 namespace a3 {
     struct partition {
@@ -38,6 +38,7 @@ struct pnode {
     a3::partition* p;
     double x;
     double y;
+    int level;
     pnode* parent;
     pnode* left;
     pnode* right;

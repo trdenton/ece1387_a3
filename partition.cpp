@@ -217,8 +217,13 @@ pnode* traverser::bfs_step() {
             // balance constraint
             if (!prune_imbalance || (pn->p->vl.size() < cells.size()/2 - 1)) {
                 pn->left = new pnode();
-                pn->left->y = pn->y + 2.0*PNODE_DIAMETER;
-                pn->left->x = pn->x - PNODE_DIAMETER;
+                
+                // UI drawing related
+                pn->left->level = pn->level + 1;
+                pn->left->y = pn->y + 64.0*PNODE_DIAMETER;
+                int levels_to_leaf = cells.size() - pn->level -3;
+                pn->left->x = pn->x - PNODE_DIAMETER*(2<<levels_to_leaf);
+
                 pn->left->cell = pn->cell + 1;
                 pn->left->parent = pn;
                 pn->left->p = pn->p->copy();
@@ -234,8 +239,13 @@ pnode* traverser::bfs_step() {
             // balance constraint
             if (!prune_imbalance || (pn->p->vr.size() < cells.size()/2 - 1)) {
                 pn->right = new pnode();
-                pn->right->y = pn->y + 2.0*PNODE_DIAMETER;
-                pn->right->x = pn->x + PNODE_DIAMETER;
+                
+                // UI drawing related
+                pn->right->level = pn->level + 1;
+                pn->right->y = pn->y + 64.0*PNODE_DIAMETER;
+                int levels_to_leaf = cells.size() - pn->level -3;
+                pn->right->x = pn->x + PNODE_DIAMETER*(2<<levels_to_leaf);
+
                 pn->right->cell = pn->cell + 1;
                 pn->right->parent = pn;
                 pn->right->p = pn->p->copy();
@@ -265,6 +275,7 @@ traverser::traverser(circuit* c, a3::partition* _best, bool (*prune_fn)(a3::part
 
     root = new pnode();
     root->parent = nullptr;
+    root->level = 0;
     root->y = PNODE_DIAMETER/2.0;
     root->x = circ->get_display_width()/2.0;
     root->cell = cells.begin();
@@ -275,6 +286,7 @@ traverser::traverser(circuit* c, a3::partition* _best, bool (*prune_fn)(a3::part
 
     prune = prune_fn;
     best = _best;
+    pnodes.push_back(root);
 
 }
 
