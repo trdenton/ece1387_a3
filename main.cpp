@@ -88,12 +88,13 @@ int main(int n, char** args) {
 
     a3::partition* best = new a3::partition(circ); 
     spdlog::info("Building initial solution");
-    best->initial_solution();
+    best->initial_solution_random();
     spdlog::info("Initial solution cost: {}", best->cost);
     
     traverser* trav = new traverser(circ, best, prune_basic_cost);
+    trav->prune_imbalance  = true;
+    trav->prune_lb = true;
     spdlog::info("Traversing decision tree");
-    
 
     if (interactive) {
         spdlog::info("Entering interactive mode");

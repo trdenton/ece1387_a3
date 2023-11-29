@@ -47,7 +47,7 @@ void ui_init(circuit* c, traverser* t, pnode* (*cb)(circuit*, traverser*)) {
     run_fn = cb;
     //set_mouse_move_input(true);
 
-    set_interval(1000);
+    set_interval(200000);
     event_loop(ui_click_handler, ui_mouse_handler, ui_key_handler, ui_drawscreen);
 }
 
@@ -80,58 +80,6 @@ void ui_key_handler(char c) {
     }
 }
 
-void ui_draw_cell_fn(circuit* circ, cell* c) {
-    double width = 1.;
-    double height = width;
-    // center at the cells coords
-    double x = 0;
-    double y = c->y;
-
-    setlinewidth(2);
-    drawarc(x,y,CELL_DIAMETER/2.,0.,360.);
-    setlinewidth(1);
-}
-
-void ui_draw_net_fn(circuit* circ, net* n) {
-    // get all pins on net
-    // first approach: draw 0 -> 1, 1 -> 2, ... etc
-    cell* c1;
-    cell* c2;
-    string sp = "";
-    for (auto& s : n->get_cell_labels()) {
-        if ( sp != "" ) {
-            c1 = circ->get_cell(s);
-            c2 = circ->get_cell(sp);
-            double x0 = 0;  //TODO
-            double y0 = 0;
-            double x1 = 0;
-            double y1 = 0;
-            drawline(x0, y0, x1, y1);
-            #if 0
-            char buff[32] = {'\0'};
-            snprintf(buff,32,"%s: %f",n->label.c_str(), n->get_weight());
-            drawtext((x0+x1)/2., (y0+y1)/2., buff, 10.0);
-            #endif
-        }
-        sp = s;
-    }
-}
-
-void ui_draw_cells(circuit* circ){
-    setcolor(GREEN);
-    setlinestyle(SOLID);
-    setlinewidth(1);
-
-    circ->foreach_cell( ui_draw_cell_fn );
-}
-
-void ui_draw_rats_nest(circuit* circ){
-    setcolor(WHITE);
-    setlinestyle(DASHED);
-    setlinewidth(1);
-    circ->foreach_net( ui_draw_net_fn );
-}
-
 void ui_draw_pnode(pnode* p) {
     setcolor(GREEN);
     setlinewidth(2);
@@ -142,8 +90,8 @@ void ui_draw_pnode(pnode* p) {
         drawline(p->x, p->y, p->parent->x, p->parent->y);
     }
     char buf[32] = {0};
-    snprintf(buf,32,"%d",p->level);
-    drawtext(p->x, p->y, buf, PNODE_DIAMETER);
+    snprintf(buf,32,"%d [%d]",p->level, p->p->cost);
+    drawtext(p->x, p->y, buf, 2*PNODE_DIAMETER);
 }
 
 void ui_draw_traverser(traverser* t) {

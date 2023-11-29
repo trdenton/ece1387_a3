@@ -228,3 +228,36 @@ TEST(Partition, unassign_cell) {
     delete p;
     delete c;
 }
+
+TEST(Partition, incr_cost) {
+
+    circuit* c = new circuit("../data/partition_test");
+    a3::partition* p = new a3::partition(c);
+
+    cell* c1 = c->get_cells()[0];
+    cell* c2 = c->get_cells()[1];
+    cell* c3 = c->get_cells()[2];
+    cell* c4 = c->get_cells()[3];
+
+    // this is normally done by initial_solution
+    std::sort(p->unassigned.begin(), p->unassigned.end(), cell_sort_most_nets);
+
+    ASSERT_TRUE(std::is_sorted(p->unassigned.begin(), p->unassigned.end(), cell_sort_most_nets));
+
+    ASSERT_EQ(p->cost, 0); // start - no crossings
+    ASSERT_TRUE(p->assign_left(c1));
+    ASSERT_EQ(p->cost, 0); // add one cell - no possible crossings
+    ASSERT_TRUE(p->assign_left(c2));
+    ASSERT_EQ(p->cost, 0); // add another cell to left - no possible crossings
+
+    ASSERT_TRUE(p->assign_right(c3));
+    ASSERT_EQ(p->cost, 1);  // add cell to right, net 'b' is now the cut set
+
+    ASSERT_TRUE(p->assign_right(c4));
+    ASSERT_EQ(p->cost, 1);  // add another cell to right, net 'c' and 'd' are confined to right, no furuther increase
+
+    ASSERT_EQ(p->calculate_cost(), 1);  // this should not change
+
+    delete p;
+    delete c;
+}

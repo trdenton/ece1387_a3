@@ -19,10 +19,11 @@ namespace a3 {
         circuit* circ;
         int cost;
 
-        std::pair<int,int> incr_costs(cell* c);
+        std::pair<int,int> incr_costs(cell* c, vector<string>& new_nets);
         partition(circuit*);
         int calculate_cost();
         vector<string> cut_nets;
+        void print_cut_nets(void);
         bool assign(vector<cell*>&, cell*);
         bool assign_left(cell* c);
         bool assign_right(cell* c);
@@ -56,6 +57,7 @@ class traverser {
     bool (*prune)(a3::partition* test, a3::partition*& best);
     public:
         bool prune_imbalance;
+        bool prune_lb;
         vector<pnode*> pnodes;
         long long unsigned int visited_nodes;
         traverser(circuit* c, a3::partition* best, bool (*prune_fn)(a3::partition* test, a3::partition*& best));
