@@ -1,6 +1,8 @@
 #ifndef __PARTITION_H__
 #define __PARTITION_H__
 #include "circuit.h"
+#include "spdlog/spdlog.h"
+#include "spdlog/fmt/bundled/format.h"
 #include <queue>
 #include <vector>
 #include <stack>
@@ -34,6 +36,7 @@ namespace a3 {
         cell* make_right_supercell();
         cell* make_left_supercell();
         partition* copy();
+        string to_string();
     };
 }
 
@@ -53,19 +56,20 @@ class traverser {
     circuit* circ;
     queue<pnode*> q_bfs;
     vector<cell*> cells;
-    a3::partition* best;
-    bool (*prune)(a3::partition* test, a3::partition*& best);
+    a3::partition** best;
+    bool (*prune)(a3::partition* test, a3::partition** best);
     public:
         bool prune_imbalance;
         bool prune_lb;
         vector<pnode*> pnodes;
         long long unsigned int visited_nodes;
-        traverser(circuit* c, a3::partition* best, bool (*prune_fn)(a3::partition* test, a3::partition*& best));
+        traverser(circuit* c, a3::partition** best, bool (*prune_fn)(a3::partition* test, a3::partition** best));
         ~traverser();
         pnode* bfs_step();
 };
 
 bool cell_sort_most_nets(cell* a, cell* b);
 void del_tree(pnode* root);
-bool prune_basic_cost(a3::partition* test, a3::partition*& best);
+bool prune_basic_cost(a3::partition* test, a3::partition** best);
+
 #endif

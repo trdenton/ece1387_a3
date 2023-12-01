@@ -16,9 +16,30 @@ a3::partition::partition(circuit* c) {
     circ = c;
     cost = 0;
     unassigned = vector<cell*>(c->get_cells()); 
+    std::sort(unassigned.begin(),unassigned.end(),cell_sort_most_nets);
     vl = vector<cell*>();
     vr = vector<cell*>();
+    spdlog::debug("new partition: {}", to_string());
 }
+
+string a3::partition::to_string()
+{
+        std::ostringstream os;
+
+        os << "[part][u ";
+        for (auto u : unassigned)
+            os << u->label << ", ";
+        os << "][l ";
+        for (auto l : vl)
+            os << l->label << ", ";
+        os << "][r ";
+        for (auto r : vr)
+            os << r->label << ", ";
+        os << "]";
+
+        return os.str();
+};
+
 
 a3::partition* a3::partition::copy() {
     a3::partition* p = new a3::partition(circ);
@@ -34,9 +55,9 @@ bool a3::partition::assign(vector<cell*>& v, cell* c) {
     bool ret = false;
     auto pos = std::find(unassigned.begin(), unassigned.end(), c);
     if (pos != unassigned.end()) {  // if we actually found it in the unassigned list
-        unassigned.erase(pos);
         if (std::find(v.begin(), v.end(), c) == v.end()) {
             v.push_back(c);
+            unassigned.erase(pos);
             ret = true;
         } else {
             spdlog::warn("cell {} was already in list", c->label);
@@ -284,7 +305,7 @@ pnode* traverser::bfs_step() {
 
 
         visited_nodes++;
-        if (pn->cell < cells.end() - 1) {
+        if (pn->p->unassigned.size() > 0) {
 
             // explore putting it on the left
             if (!prune_imbalance || (pn->p->vl.size() < cells.size()/2 )) {
@@ -296,10 +317,9 @@ pnode* traverser::bfs_step() {
                 int levels_to_leaf = cells.size() - pn->level -2;
                 pn->left->x = pn->x - PNODE_DIAMETER*(2<<levels_to_leaf);
 
-                pn->left->cell = pn->cell + 1;
                 pn->left->parent = pn;
                 pn->left->p = pn->p->copy();
-                pn->left->p->assign_left(*(pn->left->cell));
+                pn->left->p->assign_left(*(pn->p->unassigned.begin())); //unassigned.begin
                 if (!prune_lb || !prune(pn->left->p, best)) {
                     q_bfs.push(pn->left);
                     pnodes.push_back(pn->left);
@@ -322,10 +342,9 @@ pnode* traverser::bfs_step() {
                 int levels_to_leaf = cells.size() - pn->level -2;
                 pn->right->x = pn->x + PNODE_DIAMETER*(2<<levels_to_leaf);
 
-                pn->right->cell = pn->cell + 1;
                 pn->right->parent = pn;
                 pn->right->p = pn->p->copy();
-                pn->right->p->assign_right(*(pn->right->cell));
+                pn->right->p->assign_right(*(pn->p->unassigned.begin())); //unassigned.begin
                 if (!prune_lb || !prune(pn->right->p, best)) {
                     q_bfs.push(pn->right);
                     pnodes.push_back(pn->right);
@@ -338,13 +357,13 @@ pnode* traverser::bfs_step() {
                 spdlog::debug("pruning: imbalance");
             }
 
-        } else if (pn->cell < cells.end() and pn->p->unassigned.size() == 0) {
+        } else {
             assert(pn->p->vl.size() == pn->p->vr.size());
             spdlog::info("leaf node: {}", pn->p->cost);
             int tcost = pn->p->cost;
-            int bcost = best->cost;
+            int bcost = (*best)->cost;
             prune(pn->p, best);
-            spdlog::info("Test cost/recalc: {}/{} best cost/recalc: {}/{}", tcost, pn->p->calculate_cost(), bcost, best->calculate_cost());
+            spdlog::info("Test cost/recalc: {}/{} best cost/recalc: {}/{}", tcost, pn->p->calculate_cost(), bcost, (*best)->calculate_cost());
         }
 
         rc = pn;
@@ -352,7 +371,7 @@ pnode* traverser::bfs_step() {
     return rc;
 }
 
-traverser::traverser(circuit* c, a3::partition* _best, bool (*prune_fn)(a3::partition* test, a3::partition*& best)) {
+traverser::traverser(circuit* c, a3::partition** _best, bool (*prune_fn)(a3::partition* test, a3::partition** best)) {
     cells = vector<cell*>(c->get_cells());
     circ = c;
     std::sort(cells.begin(), cells.end(), cell_sort_most_nets);
@@ -367,7 +386,6 @@ traverser::traverser(circuit* c, a3::partition* _best, bool (*prune_fn)(a3::part
     root->level = 0;
     root->y = PNODE_DIAMETER/2.0;
     root->x = circ->get_display_width()/2.0;
-    root->cell = cells.begin();
     root->p = new a3::partition(c);
 
     root->p->calculate_cost();
@@ -413,17 +431,17 @@ void del_tree(pnode* root) {
 }
 
 // returning true means we prune the tree at (test) and below
-bool prune_basic_cost(a3::partition* test, a3::partition*& best) {
+bool prune_basic_cost(a3::partition* test, a3::partition** best) {
     bool ret = false;
 
-    spdlog::debug("\t({} vs {}) [{}]", test->cost, best->cost, test->unassigned.size());
-    if (test->cost <= best->cost) {
+    spdlog::debug("\t({} vs {}) [{}]", test->cost, (*best)->cost, test->unassigned.size());
+    if (test->cost < (*best)->cost) {
         if (test->unassigned.size() == 0) {
-            spdlog::info("found new best! ({} > {})", test->cost, best->cost);
-            best = test;
+            spdlog::info("found new best! ({} < {}) {}", test->cost, (*best)->cost, (void*)*best);
+            *best = test;
         }
     } else {
-        spdlog::debug("PRUNING ({} >= {})", test->cost, best->cost);
+        spdlog::debug("PRUNING ({} >= {})", test->cost, (*best)->cost);
         ret = true;
     }
     return ret;

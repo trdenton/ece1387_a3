@@ -90,13 +90,14 @@ void test_circuit_against_random(string f){
 }
 
 
-bool never_prune(a3::partition* test, a3::partition*& best) {
+bool never_prune(a3::partition* test, a3::partition** best) {
     return false;
 }
 
 TEST(Tree, bfs) {
     circuit* c = new circuit("../data/partition_test");
     a3::partition* p = new a3::partition(c);
+    a3::partition** best = &p;
     spdlog::set_level(spdlog::level::debug);
 
     cell* c1 = c->get_cells()[0];
@@ -106,7 +107,7 @@ TEST(Tree, bfs) {
 
     p->initial_solution();
     
-    traverser* t = new traverser(c, p, never_prune);
+    traverser* t = new traverser(c, best, never_prune);
     t->prune_imbalance = false;
 
     pnode* pn = t->bfs_step();
@@ -153,6 +154,7 @@ TEST(Tree, bfs) {
 TEST(Tree, bfs_prune_imbalance) {
     circuit* c = new circuit("../data/partition_test");
     a3::partition* p = new a3::partition(c);
+    a3::partition** best = &p;
     spdlog::set_level(spdlog::level::debug);
 
     cell* c1 = c->get_cells()[0];
@@ -162,7 +164,7 @@ TEST(Tree, bfs_prune_imbalance) {
 
     p->initial_solution();
     
-    traverser* t = new traverser(c, p, never_prune);
+    traverser* t = new traverser(c, best, never_prune);
     t->prune_imbalance = true;
 
     pnode* pn = t->bfs_step();

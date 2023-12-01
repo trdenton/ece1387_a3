@@ -30,14 +30,15 @@ void print_version() {
 
 pnode* run(circuit* c, traverser* t) {
     static vector<cell*> seen;
-    pnode* p = t->bfs_step();
-    if (p != nullptr) {
-        if (std::find(seen.begin(), seen.end(), *p->cell) == seen.end()) {
-            seen.push_back( *p->cell ); 
+    pnode* pn = t->bfs_step();
+    if (pn != nullptr) {
+        vector<cell*>::iterator cell = pn->p->unassigned.begin();
+        if (std::find(seen.begin(), seen.end(), *cell) == seen.end()) {
+            seen.push_back( *cell ); 
             spdlog::info("at level {}/{}", seen.size(), c->get_n_cells());
         }
     }
-    return p;
+    return pn;
 }
 
 int main(int n, char** args) {
@@ -86,10 +87,14 @@ int main(int n, char** args) {
 
     circuit* circ = new circuit(file);
 
-    a3::partition* best = new a3::partition(circ); 
+    a3::partition* init = new a3::partition(circ); 
+    a3::partition** best = &init;
     spdlog::info("Building initial solution");
-    best->initial_solution_random();
-    spdlog::info("Initial solution cost: {}", best->cost);
+    init->initial_solution_random();
+    spdlog::info("Initial solution cost: {}", (*best)->cost);
+    spdlog::info("init {}", init->to_string());
+    spdlog::info("MAX COST: {}", circ->get_n_nets());
+    spdlog::info("Initial solution cost calculated again: {}", (*best)->calculate_cost());
     
     traverser* trav = new traverser(circ, best, prune_basic_cost);
     trav->prune_imbalance  = true;
@@ -103,7 +108,8 @@ int main(int n, char** args) {
         while (run(circ,trav) != nullptr) {}
     }
 
-    spdlog::info("Final solution cost: {}", best->cost);
+    spdlog::info("Final solution cost: {} @ {}", (*best)->calculate_cost(), (void*)*best);
+    spdlog::info("best {}", (*best)->to_string());
     unsigned long long int total_possible_nodes = (2<<(circ->get_n_cells()-1))-1;
     spdlog::info("Visited/possible nodes: {}/{}", trav->visited_nodes, total_possible_nodes);
     
