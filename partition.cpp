@@ -19,7 +19,7 @@ a3::partition::partition(circuit* c) {
     std::sort(unassigned.begin(),unassigned.end(),cell_sort_most_nets);
     vl = vector<cell*>();
     vr = vector<cell*>();
-    spdlog::debug("new partition: {}", to_string());
+    //spdlog::debug("new partition: {}", to_string());
 }
 
 string a3::partition::to_string()
@@ -287,7 +287,9 @@ void a3::partition::initial_solution_random() {
 
         insert_right = !insert_right;
     }
+    spdlog::debug("random assigned cost: {}", cost);
     calculate_cost();
+    spdlog::debug("...and recalculating: {}", cost);
 }
 
 void a3::partition::print_cut_nets() {
@@ -437,7 +439,7 @@ bool prune_basic_cost(a3::partition* test, a3::partition** best) {
     spdlog::debug("\t({} vs {}) [{}]", test->cost, (*best)->cost, test->unassigned.size());
     if (test->cost < (*best)->cost) {
         if (test->unassigned.size() == 0) {
-            spdlog::info("found new best! ({} < {}) {}", test->cost, (*best)->cost, (void*)*best);
+            spdlog::info("found new best! ({} < {}) {}", test->cost, (*best)->cost, (void*)test);
             *best = test;
         }
     } else {
