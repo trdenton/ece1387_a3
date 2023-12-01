@@ -111,38 +111,28 @@ TEST(Tree, bfs) {
     t->prune_imbalance = false;
 
     pnode* pn = t->bfs_step();
-    ASSERT_EQ(*pn->cell, c2);
+    ASSERT_EQ(pn->level, 0);
 
-    pn = t->bfs_step();
-    ASSERT_EQ(*pn->cell, c3);
-    pn = t->bfs_step();
-    ASSERT_EQ(*pn->cell, c3);
+    for (int i = 0; i < 2; ++i) {
+        pn = t->bfs_step();
+        ASSERT_EQ(pn->level, 1);
+    }
 
-    pn = t->bfs_step();
-    ASSERT_EQ(*pn->cell, c4);
-    pn = t->bfs_step();
-    ASSERT_EQ(*pn->cell, c4);
-    pn = t->bfs_step();
-    ASSERT_EQ(*pn->cell, c4);
-    pn = t->bfs_step();
-    ASSERT_EQ(*pn->cell, c4);
+    for (int i = 0; i < 4; ++i) {
+        pn = t->bfs_step();
+        ASSERT_EQ(pn->level, 2);
+    }
 
-    pn = t->bfs_step();
-    ASSERT_EQ(*pn->cell, c1);
-    pn = t->bfs_step();
-    ASSERT_EQ(*pn->cell, c1);
-    pn = t->bfs_step();
-    ASSERT_EQ(*pn->cell, c1);
-    pn = t->bfs_step();
-    ASSERT_EQ(*pn->cell, c1);
-    pn = t->bfs_step();
-    ASSERT_EQ(*pn->cell, c1);
-    pn = t->bfs_step();
-    ASSERT_EQ(*pn->cell, c1);
-    pn = t->bfs_step();
-    ASSERT_EQ(*pn->cell, c1);
-    pn = t->bfs_step();
-    ASSERT_EQ(*pn->cell, c1);
+    for (int i = 0; i < 8; ++i) {
+        pn = t->bfs_step();
+        ASSERT_EQ(pn->level, 3);
+    }
+
+    for (int i = 0; i < 16; ++i) {
+        pn = t->bfs_step();
+        ASSERT_EQ(pn->level, 4);
+    }
+
 
     ASSERT_EQ(t->bfs_step(),nullptr);
 
@@ -168,34 +158,29 @@ TEST(Tree, bfs_prune_imbalance) {
     t->prune_imbalance = true;
 
     pnode* pn = t->bfs_step();
-    ASSERT_EQ(*pn->cell, c2);
+    ASSERT_EQ(pn->level, 0);
 
-    pn = t->bfs_step();
-    ASSERT_EQ(*pn->cell, c3);
-    pn = t->bfs_step();
-    ASSERT_EQ(*pn->cell, c3);
+    for (int i = 0; i < 2; ++i) {
+        pn = t->bfs_step();
+        ASSERT_EQ(pn->level, 1);
+    }
 
-    pn = t->bfs_step();
-    ASSERT_EQ(*pn->cell, c4);
-    pn = t->bfs_step();
-    ASSERT_EQ(*pn->cell, c4);
-    pn = t->bfs_step();
-    ASSERT_EQ(*pn->cell, c4);
-    pn = t->bfs_step();
-    ASSERT_EQ(*pn->cell, c4);
+    for (int i = 0; i < 4; ++i) {
+        pn = t->bfs_step();
+        ASSERT_EQ(pn->level, 2);
+    }
 
-    pn = t->bfs_step();
-    ASSERT_EQ(*pn->cell, c1);
-    pn = t->bfs_step();
-    ASSERT_EQ(*pn->cell, c1);
-    pn = t->bfs_step();
-    ASSERT_EQ(*pn->cell, c1);
-    pn = t->bfs_step();
-    ASSERT_EQ(*pn->cell, c1);
-    pn = t->bfs_step();
-    ASSERT_EQ(*pn->cell, c1);
-    pn = t->bfs_step();
-    ASSERT_EQ(*pn->cell, c1);
+    for (int i = 0; i < 6; ++i) {
+        pn = t->bfs_step();
+        ASSERT_EQ(pn->level, 3);
+    }
+
+    for (int i = 0; i < 6; ++i) {
+        pn = t->bfs_step();
+        ASSERT_EQ(pn->level, 4);
+    }
+
+
 
     ASSERT_EQ(t->bfs_step(),nullptr);
 

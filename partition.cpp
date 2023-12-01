@@ -348,7 +348,6 @@ pnode* traverser::bfs_step() {
             }
 
         } else {
-            assert(pn->p->vl.size() == pn->p->vr.size());
             spdlog::info("leaf node: {}", pn->p->cost());
             int tcost = pn->p->cost();
             int bcost = (*best)->cost();

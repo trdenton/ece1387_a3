@@ -41,7 +41,6 @@ namespace a3 {
 }
 
 struct pnode {
-    vector<cell*>::iterator cell;
     a3::partition* p;
     double x;
     double y;
