@@ -90,7 +90,7 @@ void ui_draw_pnode(pnode* p) {
         drawline(p->x, p->y, p->parent->x, p->parent->y);
     }
     char buf[32] = {0};
-    snprintf(buf,32,"%d [%d]",p->level, p->p->cost);
+    snprintf(buf,32,"%d [%d]",p->level, p->p->cost());
     drawtext(p->x, p->y, buf, 2*PNODE_DIAMETER);
 }
 

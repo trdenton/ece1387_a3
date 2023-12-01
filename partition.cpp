@@ -14,7 +14,6 @@ bool sort_by_most_mutual_to_g_supercell(cell* a, cell* b);
 
 a3::partition::partition(circuit* c) {
     circ = c;
-    cost = 0;
     unassigned = vector<cell*>(c->get_cells()); 
     std::sort(unassigned.begin(),unassigned.end(),cell_sort_most_nets);
     vl = vector<cell*>();
@@ -40,6 +39,9 @@ string a3::partition::to_string()
         return os.str();
 };
 
+int a3::partition::cost() {
+    return cut_nets.size();
+}
 
 a3::partition* a3::partition::copy() {
     a3::partition* p = new a3::partition(circ);
@@ -47,7 +49,6 @@ a3::partition* a3::partition::copy() {
     p->vl = vector<cell*>(vl);
     p->vr = vector<cell*>(vr);
     p->cut_nets = vector<string>(cut_nets);
-    p->cost = cost;
     return p;
 }
 
@@ -69,22 +70,18 @@ bool a3::partition::assign(vector<cell*>& v, cell* c) {
 }
 
 bool a3::partition::assign_left(cell* c) {
-    vector<string> new_cuts;
-    std::pair<int,int> costs = incr_costs(c, new_cuts);
+    vector<string> new_cuts = get_cut_set_if_we_add(vl, c);
     bool ret = assign(vl, c);
     if (ret) {
-        cost += costs.first;
         cut_nets = new_cuts;
     }
     return ret;
 }
 
 bool a3::partition::assign_right(cell* c) {
-    vector<string> new_cuts;
-    std::pair<int,int> costs = incr_costs(c, new_cuts);
+    vector<string> new_cuts = get_cut_set_if_we_add(vr, c);
     bool ret = assign(vr, c);
     if (ret) {
-        cost += costs.second;
         cut_nets = new_cuts;
     }
     return ret;
@@ -131,11 +128,10 @@ cell* a3::partition::make_right_supercell() {
     return new cell(vr);
 }
 
-std::pair<int,int> a3::partition::incr_costs(cell* c, vector<string>& new_nets) {
+vector<string> a3::partition::get_cut_set_if_we_add(vector<cell*> v, cell* c) {
     // project what incremental cost is for a left, right addition
-    int cost_left = 0;
-    int cost_right = 0;
     vector<string> new_cut_nets = vector<string>(cut_nets);
+    vector<cell*> v_other = (v == vl ? vr : vl);
     for (auto& n: c->get_net_labels()) {
         if (std::find(new_cut_nets.begin(),new_cut_nets.end(),n)!=new_cut_nets.end())
             continue;
@@ -145,20 +141,14 @@ std::pair<int,int> a3::partition::incr_costs(cell* c, vector<string>& new_nets) 
             cell* net_c = circ->get_cell(cl);
             if (net_c == c)
                 continue;
-            // if we find it in the right half, adding to the left will incr cost
-            if (std::find(vr.begin(), vr.end(), net_c) != vr.end()) {
-                cost_left++;
-                new_cut_nets.push_back(n); // can only cut once
-                break;
-            } else if (std::find(vl.begin(), vl.end(), net_c) != vl.end()) {
-                cost_right++;
+
+            if (std::find(v_other.begin(), v_other.end(), net_c) != v_other.end()) {
                 new_cut_nets.push_back(n); // can only cut once
                 break;
             }
         }
     }
-    new_nets = vector<string>(new_cut_nets);
-    return std::pair<int,int>(cost_left, cost_right);
+    return new_cut_nets;
 }
 
 /*
@@ -167,9 +157,8 @@ MODIFIES STATE
 changes the current cut set
 changes the current cost
 */
-int a3::partition::calculate_cost() {
+int a3::partition::calculate_cut_set() {
     // iterate over every net.  See if it has cells in both left and right
-    cost = 0;
     cut_nets = vector<string>();
     for (auto& n: circ->get_nets()) {
         // if weve already cut a net, you cant cut it more...
@@ -194,18 +183,17 @@ int a3::partition::calculate_cost() {
                 //spdlog::debug("net {} is in the cut set", n.first);
                 cut_nets.push_back(n.first);
                 // proceed to next net
-                cost++;
                 break;
             }
         }
     }
-    return cost;
+    return cut_nets.size();
 }
 
 // lower bound function
 // right now - just use the number of cut nets
 int a3::partition::lb() {
-    return cost;
+    return cost();
 }
 
 bool cell_sort_most_nets(cell* a, cell* b) {
@@ -268,7 +256,7 @@ void a3::partition::initial_solution() {
         delete g_supercell;
     }
     assert(vl.size() == vr.size());
-    calculate_cost();
+    calculate_cut_set();
 }
 
 void a3::partition::initial_solution_random() {
@@ -287,9 +275,9 @@ void a3::partition::initial_solution_random() {
 
         insert_right = !insert_right;
     }
-    spdlog::debug("random assigned cost: {}", cost);
-    calculate_cost();
-    spdlog::debug("...and recalculating: {}", cost);
+    spdlog::debug("random assigned cost: {}", cost());
+    calculate_cut_set();
+    spdlog::debug("...and recalculating: {}", cost());
 }
 
 void a3::partition::print_cut_nets() {
@@ -326,7 +314,7 @@ pnode* traverser::bfs_step() {
                     q_bfs.push(pn->left);
                     pnodes.push_back(pn->left);
                 }
-                if (pn->left->p->cost > circ->get_n_nets()) {
+                if (pn->left->p->cost() > circ->get_n_nets()) {
                     spdlog::error("cost has exceeded num nets...");
                     pn->left->p->print_cut_nets();
                 }
@@ -351,7 +339,7 @@ pnode* traverser::bfs_step() {
                     q_bfs.push(pn->right);
                     pnodes.push_back(pn->right);
                 }
-                if (pn->right->p->cost > circ->get_n_nets()) {
+                if (pn->right->p->cost() > circ->get_n_nets()) {
                     spdlog::error("cost has exceeded num nets...");
                     pn->right->p->print_cut_nets();
                 }
@@ -361,11 +349,11 @@ pnode* traverser::bfs_step() {
 
         } else {
             assert(pn->p->vl.size() == pn->p->vr.size());
-            spdlog::info("leaf node: {}", pn->p->cost);
-            int tcost = pn->p->cost;
-            int bcost = (*best)->cost;
+            spdlog::info("leaf node: {}", pn->p->cost());
+            int tcost = pn->p->cost();
+            int bcost = (*best)->cost();
             prune(pn->p, best);
-            spdlog::info("Test cost/recalc: {}/{} best cost/recalc: {}/{}", tcost, pn->p->calculate_cost(), bcost, (*best)->calculate_cost());
+            spdlog::info("Test cost/recalc: {}/{} best cost/recalc: {}/{}", tcost, pn->p->calculate_cut_set(), bcost, (*best)->calculate_cut_set());
         }
 
         rc = pn;
@@ -390,7 +378,7 @@ traverser::traverser(circuit* c, a3::partition** _best, bool (*prune_fn)(a3::par
     root->x = circ->get_display_width()/2.0;
     root->p = new a3::partition(c);
 
-    root->p->calculate_cost();
+    root->p->calculate_cut_set();
     
     q_bfs = queue<pnode*>();
     q_bfs.push(root);
@@ -436,14 +424,14 @@ void del_tree(pnode* root) {
 bool prune_basic_cost(a3::partition* test, a3::partition** best) {
     bool ret = false;
 
-    spdlog::debug("\t({} vs {}) [{}]", test->cost, (*best)->cost, test->unassigned.size());
-    if (test->cost < (*best)->cost) {
+    spdlog::debug("\t({} vs {}) [{}]", test->cost(), (*best)->cost(), test->unassigned.size());
+    if (test->cost() < (*best)->cost()) {
         if (test->unassigned.size() == 0) {
-            spdlog::info("found new best! ({} < {}) {}", test->cost, (*best)->cost, (void*)test);
+            spdlog::info("found new best! ({} < {}) {}", test->cost(), (*best)->cost(), (void*)test);
             *best = test;
         }
     } else {
-        spdlog::debug("PRUNING ({} >= {})", test->cost, (*best)->cost);
+        spdlog::debug("PRUNING ({} >= {})", test->cost(), (*best)->cost());
         ret = true;
     }
     return ret;

@@ -19,11 +19,11 @@ namespace a3 {
         vector<cell*> vl;
         vector<cell*> unassigned;
         circuit* circ;
-        int cost;
+        int cost();
 
-        std::pair<int,int> incr_costs(cell* c, vector<string>& new_nets);
+        vector<string> get_cut_set_if_we_add(vector<cell*>, cell* c);
         partition(circuit*);
-        int calculate_cost();
+        int calculate_cut_set();
         vector<string> cut_nets;
         void print_cut_nets(void);
         bool assign(vector<cell*>&, cell*);

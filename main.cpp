@@ -91,10 +91,10 @@ int main(int n, char** args) {
     a3::partition** best = &init;
     spdlog::info("Building initial solution");
     init->initial_solution_random();
-    spdlog::info("Initial solution cost: {}", (*best)->cost);
+    spdlog::info("Initial solution cost: {}", (*best)->cost());
     spdlog::info("init {}", init->to_string());
     spdlog::info("MAX COST: {}", circ->get_n_nets());
-    spdlog::info("Initial solution cost calculated again: {}", (*best)->calculate_cost());
+    spdlog::info("Initial solution cost calculated again: {}", (*best)->calculate_cut_set());
     
     traverser* trav = new traverser(circ, best, prune_basic_cost);
     trav->prune_imbalance  = true;
@@ -108,7 +108,7 @@ int main(int n, char** args) {
         while (run(circ,trav) != nullptr) {}
     }
 
-    spdlog::info("Final solution cost: {} @ {}", (*best)->calculate_cost(), (void*)*best);
+    spdlog::info("Final solution cost: {} @ {}", (*best)->calculate_cut_set(), (void*)*best);
     spdlog::info("best {}", (*best)->to_string());
     unsigned long long int total_possible_nodes = (2<<(circ->get_n_cells()-1))-1;
     spdlog::info("Visited/possible nodes: {}/{}", trav->visited_nodes, total_possible_nodes);
