@@ -90,7 +90,7 @@ int main(int n, char** args) {
     a3::partition* init = new a3::partition(circ); 
     a3::partition** best = &init;
     spdlog::info("Building initial solution");
-    init->initial_solution_random();
+    init->initial_solution();
     spdlog::info("Initial solution cost: {}", (*best)->cost());
     spdlog::info("init {}", init->to_string());
     spdlog::info("MAX COST: {}", circ->get_n_nets());
