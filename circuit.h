@@ -1,7 +1,6 @@
 #ifndef __CIRCUIT_H__
 #define __CIRCUIT_H__
 #include <vector>
-#include <unordered_set>
 #include <string>
 #include <iostream>
 #include <queue>
@@ -17,12 +16,12 @@ class fabric;
 
 class net {
     private:
-        unordered_set<string> mutable cell_labels;
+        vector<string> mutable cell_labels;
     public:
         string label;
 
         net(string l);
-        unordered_set<string> get_cell_labels();
+        vector<string> get_cell_labels();
         bool operator==(const net& other) const {
             return this->label == other.label;
         }
@@ -35,7 +34,7 @@ class net {
 class cell {
     private:
         bool fixed;
-        unordered_set<string> net_labels;
+        vector<string> net_labels;
 
     public:
         double x;
@@ -43,7 +42,7 @@ class cell {
         string label;
         cell(vector<string> s);
         void connect(cell* other);
-        unordered_set<string> get_net_labels();
+        vector<string> get_net_labels();
         void add_net(net& n);
         void add_net(string s);
         bool is_connected_to(cell* other);

@@ -124,13 +124,13 @@ cell::cell(vector<cell*> cells) {
     }
 }
 
-unordered_set<string> cell::get_net_labels() {
+vector<string> cell::get_net_labels() {
     return net_labels;
 }
 
 void cell::add_net(string s) {
     assert(s.length() > 0);
-    net_labels.insert(s); 
+    net_labels.push_back(s); 
 }
 
 void cell::add_net(net& n) {
@@ -174,7 +174,7 @@ vector<string> cell::get_mutual_net_labels(cell* other) {
 
 void net::add_cell(string s) {
     assert(s.length() > 0);
-    cell_labels.insert(s);
+    cell_labels.push_back(s);
 }
 
 void net::add_cell(cell& c) {
@@ -185,7 +185,7 @@ net::net(string l) {
     label = l;
 }
 
-unordered_set<string> net::get_cell_labels() {
+vector<string> net::get_cell_labels() {
     return cell_labels;
 }
 
