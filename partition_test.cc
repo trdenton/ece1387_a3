@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <vector>
+#include <algorithm>
 #include <unordered_set>
 #include <utility>
 #include <cstdlib>

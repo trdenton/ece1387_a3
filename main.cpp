@@ -3,6 +3,8 @@
 #include <string>
 #include <list>
 #include <getopt.h>
+#include <vector>
+#include <algorithm>
 #include "spdlog/spdlog.h"
 #include "version.h"
 #include "easygl/graphics.h"

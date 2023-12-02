@@ -3,6 +3,7 @@
 #include "spdlog/spdlog.h"
 #include <queue>
 #include <vector>
+#include <algorithm>
 #include <numeric>
 #include <list>
 
