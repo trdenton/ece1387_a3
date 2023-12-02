@@ -53,16 +53,14 @@ circuit::circuit(string file) {
 }
 
 net* circuit::get_net(string label) {
-    //net n(label);
-    //auto it = nets.find(n);
-    //return &n;
-    return nets[label];
+    auto it = std::find_if(nets.begin(),nets.end(),[label](net* n){ return n->label == label; });
+    return *it;
 }
 
 void circuit::add_net(string s) {
     net* n = new net(s);
-    if (nets.find(s) == nets.end()) {
-        nets[s] = n;
+    if (std::find_if(nets.begin(),nets.end(),[n](net* ne){return ne->label == n->label;}) == nets.end()) {
+        nets.push_back(n);
     } else {
         delete(n);
     }
@@ -76,7 +74,7 @@ void circuit::add_cell_connections(vector<string> toks) {
     for(string net : s_nets) {
         add_net(net);
         c->add_net(net);
-        nets[net]->add_cell(*c);
+        get_net(net)->add_cell(*c);
     }
 
 }
@@ -91,18 +89,6 @@ cell* circuit::get_cell(string label) {
 }
 
 circuit::~circuit() {
-}
-
-void circuit::foreach_cell(void (*fn)(circuit* circ, cell* c)) {
-    for(auto* c : cells) {
-        fn(this,c);
-    }
-}
-
-void circuit::foreach_net(void (*fn)(circuit* circ, net* c)) {
-    for(auto& c : nets) {
-        fn(this, c.second);
-    }
 }
 
 double circuit::get_display_width() {

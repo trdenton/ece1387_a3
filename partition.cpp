@@ -163,7 +163,7 @@ int a3::partition::calculate_cut_set() {
     cut_nets = vector<string>();
     for (auto& n: circ->get_nets()) {
         // if weve already cut a net, you cant cut it more...
-        if (std::find(cut_nets.begin(),cut_nets.end(),n.first) != cut_nets.end())
+        if (std::find(cut_nets.begin(),cut_nets.end(),n->label) != cut_nets.end())
             continue;
         // n.first is the string label
         // n.second is the net object
@@ -172,7 +172,7 @@ int a3::partition::calculate_cut_set() {
 
         // for each net (above), see if we have a cell in each half
         // if thats the case, weve cut the net
-        for (auto& cl : n.second->get_cell_labels()) {
+        for (auto& cl : n->get_cell_labels()) {
             cell* c = circ->get_cell(cl);
             if (std::find(vl.begin(), vl.end(), c) != vl.end()) {
                 found_in_left = true;
@@ -182,7 +182,7 @@ int a3::partition::calculate_cut_set() {
             }
             if (found_in_left && found_in_right) {
                 //spdlog::debug("net {} is in the cut set", n.first);
-                cut_nets.push_back(n.first);
+                cut_nets.push_back(n->label);
                 // proceed to next net
                 break;
             }
