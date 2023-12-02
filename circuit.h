@@ -34,6 +34,7 @@ class net {
 class cell {
     private:
         bool fixed;
+        int num_nets;
         vector<string> net_labels;
 
     public:
@@ -43,6 +44,7 @@ class cell {
         cell(vector<string> s);
         void connect(cell* other);
         vector<string> get_net_labels();
+        int get_num_nets();
         void add_net(net& n);
         void add_net(string s);
         bool is_connected_to(cell* other);

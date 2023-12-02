@@ -106,6 +106,7 @@ double circuit::get_display_height() {
 ****/
 
 cell::cell(vector<string> s) {
+    num_nets = 0;
     x = 0;
     y = 0;
     label = s[0];
@@ -131,6 +132,11 @@ vector<string> cell::get_net_labels() {
 void cell::add_net(string s) {
     assert(s.length() > 0);
     net_labels.push_back(s); 
+    num_nets++;
+}
+
+int cell::get_num_nets() {
+    return num_nets;
 }
 
 void cell::add_net(net& n) {

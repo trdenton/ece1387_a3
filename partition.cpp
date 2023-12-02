@@ -198,7 +198,7 @@ int a3::partition::lb() {
 }
 
 bool cell_sort_most_nets(cell* a, cell* b) {
-    return a->get_net_labels().size() > b->get_net_labels().size();
+    return a->get_num_nets() > b->get_num_nets();
 }
 
 cell* g_supercell;
