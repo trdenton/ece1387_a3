@@ -10,11 +10,41 @@
 
 const double PNODE_DIAMETER = 10.0;
 
+struct bitfield {
+    // assumption: we never have more than 1024 nets.  we can get this from  
+    unsigned long long bits[16];
+    int size;
+
+    bool get(int net_num) {
+        assert(net_num < 1024);
+        int chunk = net_num/64;
+        int rem = net_num%64;
+        if ((bits[chunk] & (1<<rem)) > 0) {
+            return true;
+        }
+        return false;
+    };
+    void set(int net_num) {
+        assert(net_num < 1024);
+        int chunk = net_num/64;
+        int rem = net_num%64;
+        if ((bits[chunk] & (1<<rem)) == 0) {
+            ++size;
+        }
+        bits[chunk] |= (1<<rem);
+    };
+    bitfield() {size=0; memset(bits, 0, sizeof(bits));};
+    bitfield(bitfield *other) {
+        memcpy(bits, other->bits, sizeof(bits));
+        size = other->size;
+    }
+};
+
 namespace a3 {
     struct partition {
     private:
         bool _unassign(vector<cell*>& v, cell* c);
-        std::map<string, vector<string>> cell_uncut_nets;
+        std::map<string, vector<int>> cell_uncut_nets;
 
     public:
         vector<cell*> vr;
@@ -26,7 +56,7 @@ namespace a3 {
         void cut_nets_from_adding_cell(vector<cell*>, cell* c);
         partition(circuit*);
         int calculate_cut_set();
-        vector<string> cut_nets;
+        bitfield cut_nets;
         void print_cut_nets(void);
         bool assign(vector<cell*>&, cell*);
         bool assign_left(cell* c);

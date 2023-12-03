@@ -18,7 +18,7 @@ class net {
     private:
         vector<string> mutable cell_labels;
     public:
-        string label;
+        int label;
 
         net(string l);
         vector<string> get_cell_labels();
@@ -35,7 +35,7 @@ class cell {
     private:
         bool fixed;
         int num_nets;
-        vector<string> net_labels;
+        vector<int> net_labels;
 
     public:
         double x;
@@ -43,12 +43,13 @@ class cell {
         string label;
         cell(vector<string> s);
         void connect(cell* other);
-        vector<string> get_net_labels();
+        vector<int> get_net_labels();
         int get_num_nets();
         void add_net(net& n);
+        void add_net(int);
         void add_net(string s);
         bool is_connected_to(cell* other);
-        vector<string> get_mutual_net_labels(cell* other);
+        vector<int> get_mutual_net_labels(cell* other);
         cell(vector<cell*> cells);
 };
 
@@ -66,7 +67,7 @@ class circuit {
 
         cell* get_cell(string label);
         void add_cell_connections(vector<string> toks);
-        net* get_net(string label);
+        net* get_net(int label);
         vector<net*> get_nets() {return nets;};
         void add_net(string s);
         void foreach_cell(void (*fn)(circuit* circ, cell* c));

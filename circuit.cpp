@@ -52,7 +52,7 @@ circuit::circuit(string file) {
     }
 }
 
-net* circuit::get_net(string label) {
+net* circuit::get_net(int label) {
     auto it = std::find_if(nets.begin(),nets.end(),[label](net* n){ return n->label == label; });
     return *it;
 }
@@ -71,9 +71,10 @@ void circuit::add_cell_connections(vector<string> toks) {
     cells.push_back(c);
 
     vector<string> s_nets = std::vector<string>(toks.begin()+1,toks.end()-1);
-    for(string net : s_nets) {
-        add_net(net);
-        c->add_net(net);
+    for(string s_net : s_nets) {
+        int net = stoi(s_net);
+        add_net(s_net);
+        c->add_net(s_net);
         get_net(net)->add_cell(*c);
     }
 
@@ -125,14 +126,19 @@ cell::cell(vector<cell*> cells) {
     }
 }
 
-vector<string> cell::get_net_labels() {
+vector<int> cell::get_net_labels() {
     return net_labels;
+}
+
+void cell::add_net(int i) {
+    net_labels.push_back(i); 
+    num_nets++;
 }
 
 void cell::add_net(string s) {
     assert(s.length() > 0);
-    net_labels.push_back(s); 
-    num_nets++;
+    int nl = stoi(s);
+    add_net(nl);
 }
 
 int cell::get_num_nets() {
@@ -147,9 +153,9 @@ bool cell::is_connected_to(cell* other) {
     return (get_mutual_net_labels(other).size() > 0);
 }
 
-vector<string> cell::get_mutual_net_labels(cell* other) {
-    vector<string> my_net_labels_ordered;
-    vector<string> other_net_labels_ordered;
+vector<int> cell::get_mutual_net_labels(cell* other) {
+    vector<int> my_net_labels_ordered;
+    vector<int> other_net_labels_ordered;
     
     
     for (auto n : net_labels) {
@@ -163,7 +169,7 @@ vector<string> cell::get_mutual_net_labels(cell* other) {
     sort(my_net_labels_ordered.begin(), my_net_labels_ordered.end());
     sort(other_net_labels_ordered.begin(), other_net_labels_ordered.end());
 
-    vector<string> intersection;
+    vector<int> intersection;
 
     set_intersection(my_net_labels_ordered.begin(), my_net_labels_ordered.end(),
                      other_net_labels_ordered.begin(), other_net_labels_ordered.end(),
@@ -188,7 +194,7 @@ void net::add_cell(cell& c) {
 }
 
 net::net(string l) {
-    label = l;
+    label = stoi(l);
 }
 
 vector<string> net::get_cell_labels() {
@@ -198,8 +204,3 @@ vector<string> net::get_cell_labels() {
 int net::num_pins() {
     return cell_labels.size();
 }
-
-double net::get_weight() {
-    return (double)(2./(double)(num_pins()));
-}
-

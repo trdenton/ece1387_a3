@@ -24,7 +24,7 @@ a3::partition::partition(circuit* c) {
 
     // initially, all nets are uncut
     for(auto c : c->get_cells()) {
-        cell_uncut_nets[c->label] = vector<string>(c->get_net_labels());
+        cell_uncut_nets[c->label] = vector<int>(c->get_net_labels());
     }
 }
 
@@ -47,7 +47,7 @@ string a3::partition::to_string()
 };
 
 int a3::partition::cost() {
-    return cut_nets.size();
+    return cut_nets.size;
 }
 
 a3::partition* a3::partition::copy() {
@@ -55,8 +55,8 @@ a3::partition* a3::partition::copy() {
     p->unassigned = vector<cell*>(unassigned);
     p->vl = vector<cell*>(vl);
     p->vr = vector<cell*>(vr);
-    p->cut_nets = vector<string>(cut_nets);
-    p->cell_uncut_nets = map<string, vector<string>>(cell_uncut_nets);
+    p->cut_nets = bitfield(&cut_nets);
+    p->cell_uncut_nets = map<string, vector<int>>(cell_uncut_nets);
     return p;
 }
 
@@ -147,11 +147,11 @@ void a3::partition::cut_nets_from_adding_cell(vector<cell*> v, cell* c) {
     // in cct3... idk its between like 4 and 16.  call it 12.
     // so looping over all a cells nets, and then all of each nets cells, thats 16*12 = 192 per cell
 
-    vector<string> uncut_nets = cell_uncut_nets[c->label];
-    vector<string>::iterator n = uncut_nets.begin();
-    stack<vector<string>::iterator> to_delete;// = vector<vector<string>::iterator>();
+    vector<int> uncut_nets = cell_uncut_nets[c->label];
+    vector<int>::iterator n = uncut_nets.begin();
+    stack<vector<int>::iterator> to_delete;// = vector<vector<string>::iterator>();
     for (; n < uncut_nets.end(); ++n) {
-        if (std::find(cut_nets.begin(),cut_nets.end(),*n)!=cut_nets.end())
+        if (cut_nets.get(*n))
             continue;
 
         for (auto& cl : circ->get_net(*n)->get_cell_labels()) {
@@ -160,14 +160,14 @@ void a3::partition::cut_nets_from_adding_cell(vector<cell*> v, cell* c) {
                 continue;
 
             if (std::find(v_other.begin(), v_other.end(), net_c) != v_other.end()) {
-                cut_nets.push_back(*n); // can only cut once
+                cut_nets.set(*n); // can only cut once
                 to_delete.push(n);
                 break;
             }
         }
     }
     while(!to_delete.empty()) {
-        vector<string>::iterator del = to_delete.top();
+        vector<int>::iterator del = to_delete.top();
         to_delete.pop();
         uncut_nets.erase(del);
     }
@@ -182,10 +182,10 @@ changes the current cost
 */
 int a3::partition::calculate_cut_set() {
     // iterate over every net.  See if it has cells in both left and right
-    cut_nets = vector<string>();
+    cut_nets = bitfield();
     for (auto& n: circ->get_nets()) {
         // if weve already cut a net, you cant cut it more...
-        if (std::find(cut_nets.begin(),cut_nets.end(),n->label) != cut_nets.end())
+        if (cut_nets.get(n->label))
             continue;
         // n.first is the string label
         // n.second is the net object
@@ -204,13 +204,13 @@ int a3::partition::calculate_cut_set() {
             }
             if (found_in_left && found_in_right) {
                 //spdlog::debug("net {} is in the cut set", n.first);
-                cut_nets.push_back(n->label);
+                cut_nets.set(n->label);
                 // proceed to next net
                 break;
             }
         }
     }
-    return cut_nets.size();
+    return cut_nets.size;
 }
 
 // lower bound function
@@ -305,9 +305,11 @@ void a3::partition::initial_solution_random() {
 
 void a3::partition::print_cut_nets() {
     spdlog::debug("[");
+    /*
     for(auto &n : cut_nets) {
         spdlog::debug("{}", n);
     }
+    */
     spdlog::debug("]");
 }
 
