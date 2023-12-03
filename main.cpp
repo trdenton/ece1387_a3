@@ -101,6 +101,7 @@ int main(int n, char** args) {
     traverser* trav = new traverser(circ, best, prune_basic_cost);
     trav->prune_imbalance  = true;
     trav->prune_lb = true;
+    trav->prune_symmetry = true;
     spdlog::info("Traversing decision tree");
 
     if (interactive) {

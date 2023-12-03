@@ -61,6 +61,7 @@ class traverser {
     bool (*prune)(a3::partition* test, a3::partition** best);
     public:
         bool prune_imbalance;
+        bool prune_symmetry;
         bool prune_lb;
         vector<pnode*> pnodes;
         long long unsigned int visited_nodes;

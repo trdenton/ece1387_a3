@@ -346,7 +346,7 @@ pnode* traverser::bfs_step() {
             }
 
             // explore putting it on the right
-            if (!prune_imbalance || (pn->p->vr.size() < cells.size()/2 )) {
+            if ( (pn->level > 0 || !prune_symmetry) && (!prune_imbalance || (pn->p->vr.size() < cells.size()/2 ))) {
                 pn->right = new pnode();
                 
                 // UI drawing related
