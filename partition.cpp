@@ -20,6 +20,12 @@ a3::partition::partition(circuit* c) {
     vl = vector<cell*>();
     vr = vector<cell*>();
     //spdlog::debug("new partition: {}", to_string());
+
+
+    // initially, all nets are uncut
+    for(auto c : c->get_cells()) {
+        cell_uncut_nets[c->label] = vector<string>(c->get_net_labels());
+    }
 }
 
 string a3::partition::to_string()
@@ -50,6 +56,7 @@ a3::partition* a3::partition::copy() {
     p->vl = vector<cell*>(vl);
     p->vr = vector<cell*>(vr);
     p->cut_nets = vector<string>(cut_nets);
+    p->cell_uncut_nets = map<string, vector<string>>(cell_uncut_nets);
     return p;
 }
 
@@ -71,19 +78,17 @@ bool a3::partition::assign(vector<cell*>& v, cell* c) {
 }
 
 bool a3::partition::assign_left(cell* c) {
-    vector<string> new_cuts = get_cut_set_if_we_add(vl, c);
     bool ret = assign(vl, c);
     if (ret) {
-        cut_nets = new_cuts;
+        cut_nets_from_adding_cell(vl, c);
     }
     return ret;
 }
 
 bool a3::partition::assign_right(cell* c) {
-    vector<string> new_cuts = get_cut_set_if_we_add(vr, c);
     bool ret = assign(vr, c);
     if (ret) {
-        cut_nets = new_cuts;
+        cut_nets_from_adding_cell(vr, c);
     }
     return ret;
 }
@@ -129,27 +134,44 @@ cell* a3::partition::make_right_supercell() {
     return new cell(vr);
 }
 
-vector<string> a3::partition::get_cut_set_if_we_add(vector<cell*> v, cell* c) {
+void a3::partition::cut_nets_from_adding_cell(vector<cell*> v, cell* c) {
     // project what incremental cost is for a left, right addition
-    vector<string> new_cut_nets = vector<string>(cut_nets);
     vector<cell*> v_other = (v == vl ? vr : vl);
-    for (auto& n: c->get_net_labels()) {
-        if (std::find(new_cut_nets.begin(),new_cut_nets.end(),n)!=new_cut_nets.end())
+
+    // average 16 nets per cell
+    // and ~30+ per circuit unique nets
+    // BUT we only need to loop over uncut nets, and this shrinks 
+    // we can track each cell's cut nets?  is that practical? how do we broadcast to each cell when its net is cut by another cell
+    // do we get the intersection of cell labels and uncut labels?
+    // how many cells per net?
+    // in cct3... idk its between like 4 and 16.  call it 12.
+    // so looping over all a cells nets, and then all of each nets cells, thats 16*12 = 192 per cell
+
+    vector<string> uncut_nets = cell_uncut_nets[c->label];
+    vector<string>::iterator n = uncut_nets.begin();
+    stack<vector<string>::iterator> to_delete;// = vector<vector<string>::iterator>();
+    for (; n < uncut_nets.end(); ++n) {
+        if (std::find(cut_nets.begin(),cut_nets.end(),*n)!=cut_nets.end())
             continue;
-        // n.first is the string label
-        // n.second is the net object
-        for (auto& cl : circ->get_net(n)->get_cell_labels()) {
+
+        for (auto& cl : circ->get_net(*n)->get_cell_labels()) {
             cell* net_c = circ->get_cell(cl);
             if (net_c == c)
                 continue;
 
             if (std::find(v_other.begin(), v_other.end(), net_c) != v_other.end()) {
-                new_cut_nets.push_back(n); // can only cut once
+                cut_nets.push_back(*n); // can only cut once
+                to_delete.push(n);
                 break;
             }
         }
     }
-    return new_cut_nets;
+    while(!to_delete.empty()) {
+        vector<string>::iterator del = to_delete.top();
+        to_delete.pop();
+        uncut_nets.erase(del);
+    }
+    cell_uncut_nets[c->label] = uncut_nets;
 }
 
 /*

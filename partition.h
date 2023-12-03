@@ -4,6 +4,7 @@
 #include "spdlog/spdlog.h"
 #include "spdlog/fmt/bundled/format.h"
 #include <queue>
+#include <map>
 #include <vector>
 #include <stack>
 
@@ -13,6 +14,7 @@ namespace a3 {
     struct partition {
     private:
         bool _unassign(vector<cell*>& v, cell* c);
+        std::map<string, vector<string>> cell_uncut_nets;
 
     public:
         vector<cell*> vr;
@@ -21,7 +23,7 @@ namespace a3 {
         circuit* circ;
         int cost();
 
-        vector<string> get_cut_set_if_we_add(vector<cell*>, cell* c);
+        void cut_nets_from_adding_cell(vector<cell*>, cell* c);
         partition(circuit*);
         int calculate_cut_set();
         vector<string> cut_nets;
