@@ -251,3 +251,17 @@ TEST(Partition, incr_cost) {
     delete c;
 }
 */
+
+TEST(bitfield, basic) {
+    for(unsigned long long i = 0; i < 1024; ++i) {
+        bitfield b = bitfield();
+        b.set(i);
+        for(unsigned long long j = 0; j < 1024; ++j) {
+            if (i != j) {
+                ASSERT_FALSE(b.get(j));
+            } else {
+                ASSERT_TRUE(b.get(j));
+            }
+        }
+    }
+}

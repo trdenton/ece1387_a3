@@ -17,21 +17,23 @@ struct bitfield {
 
     bool get(int net_num) {
         assert(net_num < 1024);
-        int chunk = net_num/64;
-        int rem = net_num%64;
-        if ((bits[chunk] & (1<<rem)) > 0) {
+        unsigned long long chunk = net_num/64;
+        unsigned long long rem = net_num%64;
+        unsigned long long mask = (1ULL<<rem);
+        if ((bits[chunk] & mask) > 0ULL) {
             return true;
         }
         return false;
     };
     void set(int net_num) {
         assert(net_num < 1024);
-        int chunk = net_num/64;
-        int rem = net_num%64;
-        if ((bits[chunk] & (1<<rem)) == 0) {
+        unsigned long long chunk = net_num/64;
+        unsigned long long rem = net_num%64;
+        unsigned long long mask = (1ULL<<rem);
+        if ((bits[chunk] & mask) == 0ULL) {
             ++size;
         }
-        bits[chunk] |= (1<<rem);
+        bits[chunk] |= mask;
     };
     bitfield() {size=0; memset(bits, 0, sizeof(bits));};
     bitfield(bitfield *other) {
