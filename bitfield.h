@@ -15,22 +15,24 @@ struct bitfield {
         }
         return false;
     };
+
     void set(int net_num) {
         assert(net_num < 128);
         unsigned long long chunk = net_num/64;
         unsigned long long rem = net_num%64;
         unsigned long long mask = (1ULL<<rem);
-        if ((bits[chunk] & mask) == 0ULL) {
+        if ((bits[chunk] & mask) == 0ULL) { //only increment if bit was initially zero
             ++size;
         }
         bits[chunk] |= mask;
     };
+
     void clear(int net_num) {
         assert(net_num < 128);
         unsigned long long chunk = net_num/64;
         unsigned long long rem = net_num%64;
         unsigned long long mask = ~(1ULL<<rem);
-        if ((bits[chunk] & mask) > 0ULL) {
+        if (get(net_num)) {
             --size;
         }
         bits[chunk] &= mask;

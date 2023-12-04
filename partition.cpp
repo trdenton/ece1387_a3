@@ -108,7 +108,7 @@ bool cell_sort_most_nets(cell* a, cell* b) {
 void a3::partition::initial_solution() {
     initial_solution_random();
     for(int i = 0; i < 1000; ++i) {
-        a3::partition rand(this);
+        a3::partition rand = a3::partition(this);
 
         rand.initial_solution_random();
         if (rand.cut_nets.size < cut_nets.size) {
@@ -135,20 +135,23 @@ void a3::partition::initial_solution_random() {
     cut_nets = bitfield();
     unassigned_cells = bitfield();
     uncut_nets = bitfield();
+
     for(auto nl : circ->get_nets()) {
         uncut_nets.set(nl->label);
     }
+
     for(auto cl : circ->get_cells()) {
         unassigned_cells.set(cl->label);
     }
 
-    while(unassigned_cells.size > 0) {
+    while(!unassigned.empty()) {
         int random_index = rand() % unassigned.size();
         cell* c = unassigned[random_index];
-        
+
         insert_right ? assign_right(c) : assign_left(c);
 
         insert_right = !insert_right;
+        unassigned.erase(unassigned.begin() + random_index);
     }
 }
 

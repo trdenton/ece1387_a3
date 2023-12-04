@@ -45,7 +45,7 @@ namespace a3 {
         void initial_solution();
         void initial_solution_random();
         std::string to_string();
-        };
+    };
 }
 
 struct pnode {

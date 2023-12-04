@@ -71,7 +71,7 @@ add_executable(
   circuit.cpp
   partition.cpp
   file_read_test.cc
-  #partition_test.cc
+  partition_test.cc
 )
 
 #
