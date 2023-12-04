@@ -47,6 +47,7 @@ namespace a3 {
     private:
         bool _unassign(vector<cell*>& v, cell* c);
         std::map<string, vector<int>> cell_uncut_nets;
+        vector<int> circ_uncut_nets;
 
     public:
         vector<cell*> vr;
@@ -55,6 +56,7 @@ namespace a3 {
         circuit* circ;
         int cost();
 
+        int num_guaranteed_cut_nets();
         void cut_nets_from_adding_cell(vector<cell*>, cell* c);
         partition(circuit*);
         partition(a3::partition *other);

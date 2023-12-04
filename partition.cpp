@@ -23,6 +23,9 @@ a3::partition::partition(circuit* c) {
 
 
     // initially, all nets are uncut
+    for(auto nl : circ->get_nets()) {
+        circ_uncut_nets.push_back(nl->label);
+    }
     for(auto c : c->get_cells()) {
         cell_uncut_nets[c->label] = vector<int>(c->get_net_labels());
     }
@@ -56,6 +59,7 @@ a3::partition::partition(a3::partition *other) {
     vr = vector<cell*>(other->vr);
     cut_nets = bitfield(&other->cut_nets);
     cell_uncut_nets = map<string, vector<int>>(other->cell_uncut_nets);
+    circ_uncut_nets = other->circ_uncut_nets;
     circ = other->circ;
 }
 
@@ -168,6 +172,11 @@ void a3::partition::cut_nets_from_adding_cell(vector<cell*> v, cell* c) {
     while(!to_delete.empty()) {
         vector<int>::iterator del = to_delete.top();
         to_delete.pop();
+
+        auto pos = std::find(circ_uncut_nets.begin(), circ_uncut_nets.end(), *del); 
+        if (pos != circ_uncut_nets.end()) {
+            circ_uncut_nets.erase(pos);
+        }
         uncut_nets.erase(del);
     }
     cell_uncut_nets[c->label] = uncut_nets;
@@ -443,18 +452,50 @@ void del_tree(pnode* root) {
     }
 }
 
+int a3::partition::num_guaranteed_cut_nets() {
+    // foreach net - if the number of unassigned cells is > half, its a guaranteed cut
+    int cut_net_count = 0;
+    map<int,int> net_cell_counts;
+
+    for(auto n : circ_uncut_nets) {
+        net_cell_counts[n] = 0;
+    }
+
+    int min_size = unassigned.size()/2;
+    for(auto c : unassigned) {
+        vector<int> cell_nets = cell_uncut_nets[c->label];
+        for (auto nl : cell_nets) {
+            net_cell_counts[nl]++;
+        }
+        //if (std::find(cell_nets.begin(), cell_nets.end(), n) != cell_nets.end()) {
+         //   num_cells++;
+        //}
+    }
+
+    for (auto n : circ_uncut_nets) {
+        if (net_cell_counts[n] > min_size) {
+            cut_net_count++;
+        }
+    }
+
+    return cut_net_count;
+}
+
 // returning true means we prune the tree at (test) and below
 bool prune_basic_cost(a3::partition* test, a3::partition** best) {
     bool ret = false;
 
+    int min_added_cuts = test->num_guaranteed_cut_nets();
+
     spdlog::debug("\t({} vs {}) [{}]", test->cost(), (*best)->cost(), test->unassigned.size());
-    if (test->cost() < (*best)->cost()) {
+    int total_cost = min_added_cuts + test->cost();
+    if (total_cost < (*best)->cost()) {
         if (test->unassigned.size() == 0) {
             spdlog::info("found new best! ({} < {}) {}", test->cost(), (*best)->cost(), (void*)test);
             *best = test;
         }
     } else {
-        spdlog::debug("PRUNING ({} >= {})", test->cost(), (*best)->cost());
+        spdlog::debug("PRUNING ({} >= {})", total_cost, (*best)->cost());
         ret = true;
     }
     return ret;
