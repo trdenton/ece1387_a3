@@ -265,3 +265,26 @@ TEST(bitfield, basic) {
         }
     }
 }
+
+TEST(bitfield, union_with) {
+    bitfield a, b;
+    a.set(31);
+    a.set(32);
+    a.set(33);
+    a.set(34);
+    b.set(33);
+    b.set(34);
+    b.set(35);
+    b.set(36);
+
+    ASSERT_EQ(b.union_with(a).size, 6);
+
+    ASSERT_FALSE(b.union_with(a).get(30));
+    ASSERT_TRUE(b.union_with(a).get(31));
+    ASSERT_TRUE(b.union_with(a).get(32));
+    ASSERT_TRUE(b.union_with(a).get(33));
+    ASSERT_TRUE(b.union_with(a).get(34));
+    ASSERT_TRUE(b.union_with(a).get(35));
+    ASSERT_TRUE(b.union_with(a).get(36));
+    ASSERT_FALSE(b.union_with(a).get(37));
+}

@@ -162,8 +162,10 @@ void a3::partition::cut_nets_from_adding_cell(vector<cell*> v, cell* c) {
     vector<int>::iterator n = uncut_nets.begin();
     stack<vector<int>::iterator> to_delete;// = vector<vector<string>::iterator>();
     for (; n < uncut_nets.end(); ++n) {
-        if (cut_nets.get(*n))
+        if (cut_nets.get(*n)) {
+            to_delete.push(n);
             continue;
+        }
 
         for (auto& cl : circ->get_net(*n)->get_cell_labels()) {
             cell* net_c = circ->get_cell(cl);
@@ -185,9 +187,15 @@ void a3::partition::cut_nets_from_adding_cell(vector<cell*> v, cell* c) {
         if (pos != circ_uncut_nets.end()) {
             circ_uncut_nets.erase(pos);
         }
-        uncut_nets.erase(del);
+        for (auto p : cell_uncut_nets) {
+            auto pos = std::find(p.second.begin(), p.second.end(), *del); 
+            if (pos != p.second.end()) {
+                p.second.erase(pos);
+            }
+        }
+        //uncut_nets.erase(del);
     }
-    cell_uncut_nets[c->label] = uncut_nets;
+    assert(cell_uncut_nets[c->label].size() == uncut_nets.size());
 }
 
 /*
@@ -460,8 +468,9 @@ void del_tree(pnode* root) {
     }
 }
 
-int a3::partition::num_guaranteed_cut_nets() {
+bitfield a3::partition::num_guaranteed_cut_nets() {
     // foreach net - if the number of unassigned cells is > half, its a guaranteed cut
+    bitfield ret;
     int cut_net_count = 0;
     map<int,int> net_cell_counts;
 
@@ -480,25 +489,31 @@ int a3::partition::num_guaranteed_cut_nets() {
     for (auto n : circ_uncut_nets) {
         if (net_cell_counts[n] > min_size) {
             cut_net_count++;
+            ret.set(n);
         }
     }
 
-    return cut_net_count;
+    return ret;
 }
 
-int a3::partition::min_number_anchored_nets_cut() {
-    int count = 0;
+bitfield a3::partition::min_number_anchored_nets_cut() {
     bitfield bl;
     bitfield br;
     for (auto c : unassigned) {
         vector<int> cell_nets = cell_uncut_nets[c->label];
         vector<int> myleftnets, myrightnets;
         for (auto nl : cell_nets) {
-            if (leftnets.get(nl)) {
+            int num_added=0;
+            if (leftnets.get(nl) && !rightnets.get(nl)) {
                 myleftnets.push_back(nl);
+                num_added++;
             }
-            if (rightnets.get(nl)) {
+            if (rightnets.get(nl) && !leftnets.get(nl)) {
                 myrightnets.push_back(nl);
+                num_added++;
+            }
+            if (num_added == 2){ 
+                spdlog::warn("net {} should have been cut...", nl);
             }
         }
         if (myleftnets.size() > 0 && myrightnets.size() > 0) {
@@ -515,7 +530,7 @@ int a3::partition::min_number_anchored_nets_cut() {
     }
     // need intersection of the above, cant double count...
     bitfield bu = bl.union_with(br);
-    return bu.size;
+    return bu;
 }
 
 // returning true means we prune the tree at (test) and below
@@ -523,9 +538,9 @@ bool prune_basic_cost(a3::partition* test, a3::partition** best) {
     bool ret = false;
 
     // these are different measures, there can be overlap, so cant apply both
-    int guaranteed_cuts = test->num_guaranteed_cut_nets();
-    int anchored_cuts = test->min_number_anchored_nets_cut();
-    int min_added_cuts = std::max(guaranteed_cuts,anchored_cuts);
+    //bitfield guaranteed_cuts = test->num_guaranteed_cut_nets();
+    bitfield anchored_cuts = test->min_number_anchored_nets_cut();
+    int min_added_cuts = anchored_cuts.size;//guaranteed_cuts.union_with(anchored_cuts).size;
 
     spdlog::debug("\t({} vs {}) [{}]", test->cost(), (*best)->cost(), test->unassigned.size());
     int total_cost = min_added_cuts + test->cost();

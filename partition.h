@@ -44,7 +44,7 @@ struct bitfield {
         // fix size
         result.size = 0;
         for (int i = 0; i < 1024; ++i) {
-            if (get(i)) {
+            if (result.get(i)) {
                 result.size++;
             }
         }
@@ -74,8 +74,8 @@ namespace a3 {
         circuit* circ;
         int cost();
 
-        int min_number_anchored_nets_cut();
-        int num_guaranteed_cut_nets();
+        bitfield min_number_anchored_nets_cut();
+        bitfield num_guaranteed_cut_nets();
         void cut_nets_from_adding_cell(vector<cell*>, cell* c);
         partition(circuit*);
         partition(a3::partition *other);
