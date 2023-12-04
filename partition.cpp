@@ -467,9 +467,6 @@ int a3::partition::num_guaranteed_cut_nets() {
         for (auto nl : cell_nets) {
             net_cell_counts[nl]++;
         }
-        //if (std::find(cell_nets.begin(), cell_nets.end(), n) != cell_nets.end()) {
-         //   num_cells++;
-        //}
     }
 
     for (auto n : circ_uncut_nets) {
@@ -496,6 +493,9 @@ bool prune_basic_cost(a3::partition* test, a3::partition** best) {
         }
     } else {
         spdlog::debug("PRUNING ({} >= {})", total_cost, (*best)->cost());
+        if (test->cost() < (*best)->cost()) {
+            spdlog::debug("YOU PRUNED BASED ON GUARANTEED NET CUTS");
+        }
         ret = true;
     }
     return ret;

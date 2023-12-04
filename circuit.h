@@ -1,6 +1,7 @@
 #ifndef __CIRCUIT_H__
 #define __CIRCUIT_H__
 #include <vector>
+#include <map>
 #include <string>
 #include <iostream>
 #include <queue>
@@ -56,6 +57,7 @@ class cell {
 const double CELL_DIAMETER = 10.0;
 class circuit {
     private:
+        map<string, cell*> cellmap;
         vector<cell*> cells;
         vector<net*> nets;
 
@@ -70,8 +72,6 @@ class circuit {
         net* get_net(int label);
         vector<net*> get_nets() {return nets;};
         void add_net(string s);
-        void foreach_cell(void (*fn)(circuit* circ, cell* c));
-        void foreach_net(void (*fn)(circuit* circ, net* n));
         vector<cell*> get_cells() {return cells;};
         double get_display_width();
         double get_display_height();

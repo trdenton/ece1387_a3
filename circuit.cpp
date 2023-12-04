@@ -69,6 +69,7 @@ void circuit::add_net(string s) {
 void circuit::add_cell_connections(vector<string> toks) {
     cell* c = new cell(toks);
     cells.push_back(c);
+    cellmap[c->label] = c;
 
     vector<string> s_nets = std::vector<string>(toks.begin()+1,toks.end()-1);
     for(string s_net : s_nets) {
@@ -81,12 +82,7 @@ void circuit::add_cell_connections(vector<string> toks) {
 }
 
 cell* circuit::get_cell(string label) {
-    for (auto b : cells) {
-        if (b->label == label) {
-            return b;
-        }
-    }
-    return nullptr;
+    return cellmap[label];
 }
 
 circuit::~circuit() {
