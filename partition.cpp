@@ -362,10 +362,10 @@ pnode* traverser::bfs_step() {
                 if (!prune_lb || !prune(pn->left->p, best)) {
                     q_bfs.push(pn->left);
                     pnodes.push_back(pn->left);
-                }
-                if (pn->left->p->cost() > circ->get_n_nets()) {
-                    spdlog::error("cost has exceeded num nets...");
-                    pn->left->p->print_cut_nets();
+                } else {
+                    delete pn->left->p;
+                    delete pn->left;
+                    pn->left = nullptr;
                 }
             } else {
                 spdlog::debug("pruning: imbalance");
@@ -387,10 +387,10 @@ pnode* traverser::bfs_step() {
                 if (!prune_lb || !prune(pn->right->p, best)) {
                     q_bfs.push(pn->right);
                     pnodes.push_back(pn->right);
-                }
-                if (pn->right->p->cost() > circ->get_n_nets()) {
-                    spdlog::error("cost has exceeded num nets...");
-                    pn->right->p->print_cut_nets();
+                } else {
+                    delete pn->right->p;
+                    delete pn->right;
+                    pn->right = nullptr;
                 }
             } else {
                 spdlog::debug("pruning: imbalance");
