@@ -15,12 +15,6 @@ bool cell_sort_most_nets(cell* a, cell* b);
 bool sort_by_most_mutual_to_g_supercell(cell* a, cell* b);
 
 a3::partition::partition() {
-    for(auto nl : circ->get_nets()) {
-        uncut_nets.set(nl->label);
-    }
-    for(auto cl : circ->get_cells()) {
-        unassigned_cells.set(cl->label);
-    }
 }
 
 a3::partition::partition(circuit* c) {
@@ -38,14 +32,14 @@ a3::partition::partition(circuit* c) {
 }
 
 a3::partition::partition(a3::partition* other) {
-	circ = other->circ;
-	vr_cells = other->vr_cells;
-        vl_cells = other->vl_cells;
-        vr_nets = other->vr_nets;
-        vl_nets = other->vl_nets;
-        unassigned_cells = other->unassigned_cells;
-        uncut_nets = other->uncut_nets;
-        cut_nets = other->cut_nets;
+    circ = other->circ;
+    vr_cells = other->vr_cells;
+    vl_cells = other->vl_cells;
+    vr_nets = other->vr_nets;
+    vl_nets = other->vl_nets;
+    unassigned_cells = other->unassigned_cells;
+    uncut_nets = other->uncut_nets;
+    cut_nets = other->cut_nets;
 }
 
 string a3::partition::to_string()
@@ -255,7 +249,7 @@ traverser::traverser(circuit* c, a3::partition** _best, bool (*prune_fn)(a3::par
     root->level = 0;
     root->y = PNODE_DIAMETER/2.0;
     root->x = circ->get_display_width()/2.0;
-    root->p = new a3::partition(c);
+    root->p = a3::partition(c);
 
     q_bfs = queue<pnode*>();
     q_bfs.push(root);
@@ -395,7 +389,7 @@ bool prune_basic_cost(a3::partition* test, a3::partition** best) {
     bitfield guaranteed_cuts = test->num_guaranteed_cut_nets();
     bitfield anchored_cuts = test->min_number_anchored_nets_cut();
     bitfield full_partition_cuts = test->one_partition_full_cut_nets();
-    int min_added_cuts = guaranteed_cuts.union_with(anchored_cuts).union_with(full_partition_cuts).size;
+    int min_added_cuts = 0;//guaranteed_cuts.union_with(anchored_cuts).union_with(full_partition_cuts).size;
 
     spdlog::debug("\t({} vs {}) [{}]", test->cost(), (*best)->cost(), test->unassigned_cells.size);
     int total_cost = min_added_cuts + test->cost();
