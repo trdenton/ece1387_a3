@@ -61,6 +61,8 @@ a3::partition::partition(a3::partition *other) {
     cell_uncut_nets = map<string, vector<int>>(other->cell_uncut_nets);
     circ_uncut_nets = other->circ_uncut_nets;
     circ = other->circ;
+    leftnets = other->leftnets;
+    rightnets = other->rightnets;
 }
 
 bool a3::partition::assign(vector<cell*>& v, cell* c) {
@@ -84,6 +86,9 @@ bool a3::partition::assign_left(cell* c) {
     bool ret = assign(vl, c);
     if (ret) {
         cut_nets_from_adding_cell(vl, c);
+        for(auto nl : c->get_net_labels()) {
+            leftnets.set(nl);
+        }
     }
     return ret;
 }
@@ -92,6 +97,9 @@ bool a3::partition::assign_right(cell* c) {
     bool ret = assign(vr, c);
     if (ret) {
         cut_nets_from_adding_cell(vr, c);
+        for(auto nl : c->get_net_labels()) {
+            rightnets.set(nl);
+        }
     }
     return ret;
 }
@@ -478,11 +486,46 @@ int a3::partition::num_guaranteed_cut_nets() {
     return cut_net_count;
 }
 
+int a3::partition::min_number_anchored_nets_cut() {
+    int count = 0;
+    bitfield bl;
+    bitfield br;
+    for (auto c : unassigned) {
+        vector<int> cell_nets = cell_uncut_nets[c->label];
+        vector<int> myleftnets, myrightnets;
+        for (auto nl : cell_nets) {
+            if (leftnets.get(nl)) {
+                myleftnets.push_back(nl);
+            }
+            if (rightnets.get(nl)) {
+                myrightnets.push_back(nl);
+            }
+        }
+        if (myleftnets.size() > 0 && myrightnets.size() > 0) {
+            if (myleftnets.size() < myrightnets.size()) {
+                for(auto nl : myleftnets) {
+                    bl.set(nl);
+                }
+            } else {
+                for(auto nl : myrightnets) {
+                    br.set(nl);
+                }
+            }
+        }
+    }
+    // need intersection of the above, cant double count...
+    bitfield bu = bl.union_with(br);
+    return bu.size;
+}
+
 // returning true means we prune the tree at (test) and below
 bool prune_basic_cost(a3::partition* test, a3::partition** best) {
     bool ret = false;
 
-    int min_added_cuts = test->num_guaranteed_cut_nets();
+    // these are different measures, there can be overlap, so cant apply both
+    int guaranteed_cuts = test->num_guaranteed_cut_nets();
+    int anchored_cuts = test->min_number_anchored_nets_cut();
+    int min_added_cuts = std::max(guaranteed_cuts,anchored_cuts);
 
     spdlog::debug("\t({} vs {}) [{}]", test->cost(), (*best)->cost(), test->unassigned.size());
     int total_cost = min_added_cuts + test->cost();

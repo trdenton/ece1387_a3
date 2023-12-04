@@ -35,6 +35,22 @@ struct bitfield {
         }
         bits[chunk] |= mask;
     };
+
+    bitfield union_with(bitfield& other) {
+        bitfield result;
+        for(int i = 0; i < 16; ++i) {
+            result.bits[i] = bits[i] | other.bits[i];
+        }
+        // fix size
+        result.size = 0;
+        for (int i = 0; i < 1024; ++i) {
+            if (get(i)) {
+                result.size++;
+            }
+        }
+        return result;
+    };
+
     bitfield() {size=0; memset(bits, 0, sizeof(bits));};
     bitfield(bitfield *other) {
         memcpy(bits, other->bits, sizeof(bits));
@@ -48,6 +64,8 @@ namespace a3 {
         bool _unassign(vector<cell*>& v, cell* c);
         std::map<string, vector<int>> cell_uncut_nets;
         vector<int> circ_uncut_nets;
+        bitfield leftnets;
+        bitfield rightnets;
 
     public:
         vector<cell*> vr;
@@ -56,6 +74,7 @@ namespace a3 {
         circuit* circ;
         int cost();
 
+        int min_number_anchored_nets_cut();
         int num_guaranteed_cut_nets();
         void cut_nets_from_adding_cell(vector<cell*>, cell* c);
         partition(circuit*);
