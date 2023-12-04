@@ -134,16 +134,21 @@ void a3::partition::initial_solution_random() {
     srand(time(NULL));
     vector<cell*> unassigned = circ->get_cells();
 
-    // sanity checking
-    assert(vr_cells.size == 0);
-    assert(vl_cells.size == 0);
-    assert(vr_nets.size == 0);
-    assert(vl_nets.size == 0);
-    assert(cut_nets.size == 0);
-    assert(unassigned_cells.size == unassigned.size());
-    assert(uncut_nets.size == circ->get_n_nets());
+    vr_cells = bitfield();
+    vl_cells = bitfield();
+    vr_nets = bitfield();
+    vl_nets = bitfield();
+    cut_nets = bitfield();
+    unassigned_cells = bitfield();
+    uncut_nets = bitfield();
+    for(auto nl : circ->get_nets()) {
+        uncut_nets.set(nl->label);
+    }
+    for(auto cl : circ->get_cells()) {
+        unassigned_cells.set(cl->label);
+    }
 
-    while(unassigned.size() > 0) {
+    while(unassigned_cells.size > 0) {
         int random_index = rand() % unassigned.size();
         cell* c = unassigned[random_index];
         
