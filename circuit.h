@@ -9,55 +9,49 @@
 #include <inttypes.h>
 #include <limits.h>
 #include "spdlog/spdlog.h"
+#include "partition.h"
+#include "bitfield.h"
 
 using namespace std;
 
 class cell;
-class fabric;
 
 class net {
-    private:
-        vector<string> mutable cell_labels;
     public:
+        bitfield cell_labels;
         int label;
 
         net(string l);
-        vector<string> get_cell_labels();
         bool operator==(const net& other) const {
             return this->label == other.label;
         }
+        void add_cell(int i);
         void add_cell(cell& n);
         void add_cell(string c);
-        int num_pins();
-        double get_weight();
 };
 
 class cell {
-    private:
-        bool fixed;
-        int num_nets;
-        vector<int> net_labels;
-
     public:
+        bitfield net_labels;
         double x;
         double y;
-        string label;
+        int label;
         cell(vector<string> s);
         void connect(cell* other);
-        vector<int> get_net_labels();
         int get_num_nets();
         void add_net(net& n);
         void add_net(int);
         void add_net(string s);
-        bool is_connected_to(cell* other);
-        vector<int> get_mutual_net_labels(cell* other);
         cell(vector<cell*> cells);
+        bool operator==(const cell& other) const {
+            return this->label == other.label;
+        }
 };
 
 const double CELL_DIAMETER = 10.0;
 class circuit {
     private:
-        map<string, cell*> cellmap;
+        map<int, cell*> cellmap;
         vector<cell*> cells;
         vector<net*> nets;
 
@@ -67,7 +61,7 @@ class circuit {
         int get_n_cells() { return cells.size();}
         int get_n_nets() { return nets.size();}
 
-        cell* get_cell(string label);
+        cell* get_cell(int label);
         void add_cell_connections(vector<string> toks);
         net* get_net(int label);
         vector<net*> get_nets() {return nets;};

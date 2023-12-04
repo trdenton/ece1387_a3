@@ -1,4 +1,5 @@
 #include "circuit.h"
+#include "bitfield.h"
 #include <string>
 #include <math.h>
 #include <iostream>
@@ -81,7 +82,7 @@ void circuit::add_cell_connections(vector<string> toks) {
 
 }
 
-cell* circuit::get_cell(string label) {
+cell* circuit::get_cell(int label) {
     return cellmap[label];
 }
 
@@ -109,10 +110,9 @@ double circuit::get_display_height() {
 ****/
 
 cell::cell(vector<string> s) {
-    num_nets = 0;
     x = 0;
     y = 0;
-    label = s[0];
+    label = stoi(s[0]);
     //nets = std::vector<string>(s.begin()+1,s.end()-1);
 }
 
@@ -120,21 +120,16 @@ cell::cell(vector<string> s) {
 cell::cell(vector<cell*> cells) {
     x = 0;
     y = 0;
-    label = "[sc]";
+    label = 0;
     for(auto& c : cells) {
-        for(auto& n: c->get_net_labels()) {
+        for(auto& n: c->net_labels.to_vec()) {
             add_net(n);
         }
     }
 }
 
-vector<int> cell::get_net_labels() {
-    return net_labels;
-}
-
 void cell::add_net(int i) {
-    net_labels.push_back(i); 
-    num_nets++;
+    net_labels.set(i); 
 }
 
 void cell::add_net(string s) {
@@ -144,39 +139,11 @@ void cell::add_net(string s) {
 }
 
 int cell::get_num_nets() {
-    return num_nets;
+    return net_labels.size;
 }
 
 void cell::add_net(net& n) {
     add_net(n.label);
-}
-
-bool cell::is_connected_to(cell* other) {
-    return (get_mutual_net_labels(other).size() > 0);
-}
-
-vector<int> cell::get_mutual_net_labels(cell* other) {
-    vector<int> my_net_labels_ordered;
-    vector<int> other_net_labels_ordered;
-    
-    
-    for (auto n : net_labels) {
-        my_net_labels_ordered.push_back(n);
-    }
-    
-    for (auto n : other->net_labels) {
-        other_net_labels_ordered.push_back(n);
-    }
-
-    sort(my_net_labels_ordered.begin(), my_net_labels_ordered.end());
-    sort(other_net_labels_ordered.begin(), other_net_labels_ordered.end());
-
-    vector<int> intersection;
-
-    set_intersection(my_net_labels_ordered.begin(), my_net_labels_ordered.end(),
-                     other_net_labels_ordered.begin(), other_net_labels_ordered.end(),
-                     back_inserter(intersection));
-    return intersection;
 }
 
 
@@ -188,8 +155,13 @@ vector<int> cell::get_mutual_net_labels(cell* other) {
 
 void net::add_cell(string s) {
     assert(s.length() > 0);
-    cell_labels.push_back(s);
+    cell_labels.set(stoi(s));
 }
+
+void net::add_cell(int i) {
+    cell_labels.set(i);
+}
+
 
 void net::add_cell(cell& c) {
     add_cell(c.label);
@@ -197,12 +169,4 @@ void net::add_cell(cell& c) {
 
 net::net(string l) {
     label = stoi(l);
-}
-
-vector<string> net::get_cell_labels() {
-    return cell_labels;
-}
-
-int net::num_pins() {
-    return cell_labels.size();
 }
