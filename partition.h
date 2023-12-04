@@ -57,6 +57,7 @@ namespace a3 {
 
         void cut_nets_from_adding_cell(vector<cell*>, cell* c);
         partition(circuit*);
+        partition(a3::partition *other);
         int calculate_cut_set();
         bitfield cut_nets;
         void print_cut_nets(void);
@@ -69,7 +70,6 @@ namespace a3 {
         void initial_solution_random();
         cell* make_right_supercell();
         cell* make_left_supercell();
-        partition* copy();
         string to_string();
     };
 }

@@ -73,7 +73,7 @@ void test_circuit_against_random(string f){
 
     vector<int> rand_scores(0);
     for(int i = 0; i < 10; ++i) {
-        a3::partition* p_rand = p_blank->copy();
+        a3::partition* p_rand = new a3::partition(p_blank);
         p_rand->initial_solution_random();
         rand_scores.push_back(p_rand->cost());
         delete p_rand;

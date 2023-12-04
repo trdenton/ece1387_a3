@@ -50,14 +50,13 @@ int a3::partition::cost() {
     return cut_nets.size;
 }
 
-a3::partition* a3::partition::copy() {
-    a3::partition* p = new a3::partition(circ);
-    p->unassigned = vector<cell*>(unassigned);
-    p->vl = vector<cell*>(vl);
-    p->vr = vector<cell*>(vr);
-    p->cut_nets = bitfield(&cut_nets);
-    p->cell_uncut_nets = map<string, vector<int>>(cell_uncut_nets);
-    return p;
+a3::partition::partition(a3::partition *other) {
+    unassigned = vector<cell*>(other->unassigned);
+    vl = vector<cell*>(other->vl);
+    vr = vector<cell*>(other->vr);
+    cut_nets = bitfield(&other->cut_nets);
+    cell_uncut_nets = map<string, vector<int>>(other->cell_uncut_nets);
+    circ = other->circ;
 }
 
 bool a3::partition::assign(vector<cell*>& v, cell* c) {
@@ -333,7 +332,7 @@ pnode* traverser::bfs_step() {
                 pn->left->x = pn->x - PNODE_DIAMETER*(2<<levels_to_leaf);
 
                 pn->left->parent = pn;
-                pn->left->p = pn->p->copy();
+                pn->left->p = new a3::partition(pn->p);
                 pn->left->p->assign_left(*(pn->p->unassigned.begin())); //unassigned.begin
                 if (!prune_lb || !prune(pn->left->p, best)) {
                     q_bfs.push(pn->left);
@@ -358,7 +357,7 @@ pnode* traverser::bfs_step() {
                 pn->right->x = pn->x + PNODE_DIAMETER*(2<<levels_to_leaf);
 
                 pn->right->parent = pn;
-                pn->right->p = pn->p->copy();
+                pn->right->p = new a3::partition(pn->p);
                 pn->right->p->assign_right(*(pn->p->unassigned.begin())); //unassigned.begin
                 if (!prune_lb || !prune(pn->right->p, best)) {
                     q_bfs.push(pn->right);
