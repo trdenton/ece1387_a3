@@ -496,6 +496,31 @@ bitfield a3::partition::num_guaranteed_cut_nets() {
     return ret;
 }
 
+bitfield a3::partition::one_partition_full_cut_nets() {
+    bitfield ret;
+    vector<cell*> *remaining_side = nullptr;
+    if (vl.size() == circ->get_n_cells()/2) {
+        remaining_side = &vr;
+    }
+    else if (vr.size() == circ->get_n_cells()/2) {
+        remaining_side = &vl;
+    }
+
+    if (nullptr != remaining_side) {
+        for(auto c: unassigned) {
+            vector<int> uncut_nets = cell_uncut_nets[c->label];
+            cell *cc = circ->get_cell(c->label);
+            for(auto nl: uncut_nets) {
+                if (std::find(remaining_side->begin(), remaining_side->end(), cc) != remaining_side->end()) {
+                    ret.set(nl);
+                }
+            }
+
+        }
+    }
+    return ret;
+}
+
 bitfield a3::partition::min_number_anchored_nets_cut() {
     bitfield bl;
     bitfield br;
@@ -538,9 +563,10 @@ bool prune_basic_cost(a3::partition* test, a3::partition** best) {
     bool ret = false;
 
     // these are different measures, there can be overlap, so cant apply both
-    //bitfield guaranteed_cuts = test->num_guaranteed_cut_nets();
+    bitfield guaranteed_cuts = test->num_guaranteed_cut_nets();
     bitfield anchored_cuts = test->min_number_anchored_nets_cut();
-    int min_added_cuts = anchored_cuts.size;//guaranteed_cuts.union_with(anchored_cuts).size;
+    bitfield full_partition_cuts = test->one_partition_full_cut_nets();
+    int min_added_cuts = guaranteed_cuts.union_with(anchored_cuts).union_with(full_partition_cuts).size;
 
     spdlog::debug("\t({} vs {}) [{}]", test->cost(), (*best)->cost(), test->unassigned.size());
     int total_cost = min_added_cuts + test->cost();

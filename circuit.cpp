@@ -86,6 +86,12 @@ cell* circuit::get_cell(string label) {
 }
 
 circuit::~circuit() {
+	for(auto n : nets) {
+		delete n;
+	}
+	for(auto c : cells) {
+		delete c;
+	}
 }
 
 double circuit::get_display_width() {

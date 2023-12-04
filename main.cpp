@@ -124,5 +124,6 @@ int main(int n, char** args) {
     spdlog::info("Exiting");
     delete trav;
     delete circ;
+    //delete init;
     return 0;
 }

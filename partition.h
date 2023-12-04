@@ -76,6 +76,7 @@ namespace a3 {
 
         bitfield min_number_anchored_nets_cut();
         bitfield num_guaranteed_cut_nets();
+        bitfield one_partition_full_cut_nets();
         void cut_nets_from_adding_cell(vector<cell*>, cell* c);
         partition(circuit*);
         partition(a3::partition *other);
