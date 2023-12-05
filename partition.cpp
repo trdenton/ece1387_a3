@@ -1,4 +1,5 @@
 #include "partition.h"
+#include "bitfield.h"
 #include "circuit.h"
 #include "spdlog/spdlog.h"
 #include <queue>
@@ -13,37 +14,48 @@
 bool cell_sort_most_nets(cell* a, cell* b);
 bool sort_by_most_mutual_to_g_supercell(cell* a, cell* b);
 
+a3::partition::partition() {
+}
+
 a3::partition::partition(circuit* c) {
     circ = c;
-    unassigned = vector<cell*>(c->get_cells()); 
-    std::sort(unassigned.begin(),unassigned.end(),cell_sort_most_nets);
-    vl = vector<cell*>();
-    vr = vector<cell*>();
     //spdlog::debug("new partition: {}", to_string());
 
 
     // initially, all nets are uncut
     for(auto nl : circ->get_nets()) {
-        circ_uncut_nets.push_back(nl->label);
+        uncut_nets.set(nl->label);
     }
-    for(auto c : c->get_cells()) {
-        cell_uncut_nets[c->label] = vector<int>(c->get_net_labels());
+    for(auto cl : circ->get_cells()) {
+        unassigned_cells.set(cl->label);
     }
+}
+
+a3::partition::partition(a3::partition* other) {
+    circ = other->circ;
+    vr_cells = other->vr_cells;
+    vl_cells = other->vl_cells;
+    vr_nets = other->vr_nets;
+    vl_nets = other->vl_nets;
+    unassigned_cells = other->unassigned_cells;
+    uncut_nets = other->uncut_nets;
+    cut_nets = other->cut_nets;
 }
 
 string a3::partition::to_string()
 {
+
         std::ostringstream os;
 
         os << "[part][u ";
-        for (auto u : unassigned)
-            os << u->label << ", ";
+        for (auto u : unassigned_cells.to_vec())
+            os << u << ", ";
         os << "][l ";
-        for (auto l : vl)
-            os << l->label << ", ";
+        for (auto l : vl_cells.to_vec())
+            os << l << ", ";
         os << "][r ";
-        for (auto r : vr)
-            os << r->label << ", ";
+        for (auto r : vr_cells.to_vec())
+            os << r << ", ";
         os << "]";
 
         return os.str();
@@ -53,189 +65,34 @@ int a3::partition::cost() {
     return cut_nets.size;
 }
 
-a3::partition::partition(a3::partition *other) {
-    unassigned = vector<cell*>(other->unassigned);
-    vl = vector<cell*>(other->vl);
-    vr = vector<cell*>(other->vr);
-    cut_nets = bitfield(&other->cut_nets);
-    cell_uncut_nets = map<string, vector<int>>(other->cell_uncut_nets);
-    circ_uncut_nets = other->circ_uncut_nets;
-    circ = other->circ;
-    leftnets = other->leftnets;
-    rightnets = other->rightnets;
-}
-
-bool a3::partition::assign(vector<cell*>& v, cell* c) {
-    bool ret = false;
-    auto pos = std::find(unassigned.begin(), unassigned.end(), c);
-    if (pos != unassigned.end()) {  // if we actually found it in the unassigned list
-        if (std::find(v.begin(), v.end(), c) == v.end()) {
-            v.push_back(c);
-            unassigned.erase(pos);
-            ret = true;
-        } else {
-            spdlog::warn("cell {} was already in list", c->label);
-        }
-    } else {
-        spdlog::warn("cell {} was not in unassigned list", c->label);
-    }
-    return ret;
-}
-
-bool a3::partition::assign_left(cell* c) {
-    bool ret = assign(vl, c);
-    if (ret) {
-        cut_nets_from_adding_cell(vl, c);
-        for(auto nl : c->get_net_labels()) {
-            leftnets.set(nl);
+void a3::partition::update_cut_nets() {
+    for (auto nl : uncut_nets.to_vec()) {
+        if (vr_nets.get(nl) && vl_nets.get(nl)) {
+            uncut_nets.clear(nl);
+            cut_nets.set(nl);
         }
     }
-    return ret;
 }
 
-bool a3::partition::assign_right(cell* c) {
-    bool ret = assign(vr, c);
-    if (ret) {
-        cut_nets_from_adding_cell(vr, c);
-        for(auto nl : c->get_net_labels()) {
-            rightnets.set(nl);
-        }
+void a3::partition::assign_left(cell* c) {
+    unassigned_cells.clear(c->label);
+    vl_cells.set(c->label);
+    for(auto nl : c->net_labels.to_vec()) {
+        vl_nets.set(nl);
     }
-    return ret;
+    update_cut_nets();
 }
 
-bool a3::partition::_unassign(vector<cell*>& v, cell* c) {
-    bool rc = false;
-    auto elem = std::find(v.begin(), v.end(), c);
-    if (elem != v.end()) {
-        rc = true; 
-        v.erase(elem);
+void a3::partition::assign_right(cell* c) {
+    unassigned_cells.clear(c->label);
+    vr_cells.set(c->label);
+    for(auto nl : c->net_labels.to_vec()) {
+        vr_nets.set(nl);
     }
-    return rc;
+    update_cut_nets();
 }
 
-bool a3::partition::unassign(cell* c) {
-    bool rc = false;
 
-    if (_unassign(vl, c)) {
-        rc = true;
-    } else if (_unassign(vr, c)) {
-        rc = true;
-    }
-
-    // insertion sort to maintain unassigned order
-    if (rc) {
-        for(auto iter = unassigned.begin(); iter < unassigned.end(); ++iter) {
-            if (cell_sort_most_nets(c, *iter)) {
-                unassigned.insert(iter, c);
-                return true;
-            }
-        }
-        unassigned.push_back(c);
-        
-    }
-    return rc;
-}
-
-cell* a3::partition::make_left_supercell() {
-    return new cell(vl);
-}
-
-cell* a3::partition::make_right_supercell() {
-    return new cell(vr);
-}
-
-void a3::partition::cut_nets_from_adding_cell(vector<cell*> v, cell* c) {
-    // project what incremental cost is for a left, right addition
-    vector<cell*> v_other = (v == vl ? vr : vl);
-
-    // average 16 nets per cell
-    // and ~30+ per circuit unique nets
-    // BUT we only need to loop over uncut nets, and this shrinks 
-    // we can track each cell's cut nets?  is that practical? how do we broadcast to each cell when its net is cut by another cell
-    // do we get the intersection of cell labels and uncut labels?
-    // how many cells per net?
-    // in cct3... idk its between like 4 and 16.  call it 12.
-    // so looping over all a cells nets, and then all of each nets cells, thats 16*12 = 192 per cell
-
-    vector<int> uncut_nets = cell_uncut_nets[c->label];
-    vector<int>::iterator n = uncut_nets.begin();
-    stack<vector<int>::iterator> to_delete;// = vector<vector<string>::iterator>();
-    for (; n < uncut_nets.end(); ++n) {
-        if (cut_nets.get(*n)) {
-            to_delete.push(n);
-            continue;
-        }
-
-        for (auto& cl : circ->get_net(*n)->get_cell_labels()) {
-            cell* net_c = circ->get_cell(cl);
-            if (net_c == c)
-                continue;
-
-            if (std::find(v_other.begin(), v_other.end(), net_c) != v_other.end()) {
-                cut_nets.set(*n); // can only cut once
-                to_delete.push(n);
-                break;
-            }
-        }
-    }
-    while(!to_delete.empty()) {
-        vector<int>::iterator del = to_delete.top();
-        to_delete.pop();
-
-        auto pos = std::find(circ_uncut_nets.begin(), circ_uncut_nets.end(), *del); 
-        if (pos != circ_uncut_nets.end()) {
-            circ_uncut_nets.erase(pos);
-        }
-        for (auto p : cell_uncut_nets) {
-            auto pos = std::find(p.second.begin(), p.second.end(), *del); 
-            if (pos != p.second.end()) {
-                p.second.erase(pos);
-            }
-        }
-        //uncut_nets.erase(del);
-    }
-    assert(cell_uncut_nets[c->label].size() == uncut_nets.size());
-}
-
-/*
-MODIFIES STATE
-
-changes the current cut set
-changes the current cost
-*/
-int a3::partition::calculate_cut_set() {
-    // iterate over every net.  See if it has cells in both left and right
-    cut_nets = bitfield();
-    for (auto& n: circ->get_nets()) {
-        // if weve already cut a net, you cant cut it more...
-        if (cut_nets.get(n->label))
-            continue;
-        // n.first is the string label
-        // n.second is the net object
-        bool found_in_left = false;
-        bool found_in_right = false;
-
-        // for each net (above), see if we have a cell in each half
-        // if thats the case, weve cut the net
-        for (auto& cl : n->get_cell_labels()) {
-            cell* c = circ->get_cell(cl);
-            if (std::find(vl.begin(), vl.end(), c) != vl.end()) {
-                found_in_left = true;
-            }
-            else if (std::find(vr.begin(), vr.end(), c) != vr.end()) {
-                found_in_right = true;
-            }
-            if (found_in_left && found_in_right) {
-                //spdlog::debug("net {} is in the cut set", n.first);
-                cut_nets.set(n->label);
-                // proceed to next net
-                break;
-            }
-        }
-    }
-    return cut_nets.size;
-}
 
 // lower bound function
 // right now - just use the number of cut nets
@@ -244,37 +101,110 @@ int a3::partition::lb() {
 }
 
 bool cell_sort_most_nets(cell* a, cell* b) {
-    return a->get_num_nets() > b->get_num_nets();
+    return a->net_labels.size > b->net_labels.size;
 }
 
-cell* g_supercell;
-bool sort_by_most_mutual_to_g_supercell(cell* a, cell* b) {
-    return g_supercell->get_mutual_net_labels(a).size() > g_supercell->get_mutual_net_labels(b).size();
-}
 
 void a3::partition::initial_solution() {
-    // sort cells by their fanout
-    // pick the highest fanout node, put it on the left (cell 1)
-    // among the next highest cells, pick the one with the least mutual overlap with cell 1.  put it on the right.
-    // alternate left and right, picking the next node via one with the most mutual nets to the supernode of that side
+    initial_solution_heur1();
+    bool beat_heuristic = false;
+    for(int i = 0; i < 100000; ++i) {
+        a3::partition rand = a3::partition(this);
+
+        rand.initial_solution_random();
+        if (rand.cut_nets.size < cut_nets.size) {
+            beat_heuristic = true;
+            vr_cells = rand.vr_cells;
+            vl_cells = rand.vl_cells;
+            vr_nets = rand.vr_nets;
+            vl_nets = rand.vl_nets;
+            unassigned_cells = rand.unassigned_cells;
+            uncut_nets = rand.uncut_nets;
+            cut_nets = rand.cut_nets;
+        }
+    }
+    if (!beat_heuristic) {
+        spdlog::info("didnt beat heuristic");
+    }
+}
+
+void a3::partition::initial_solution_random() {
+    bool insert_right = true;
+    srand(time(NULL));
+    vector<cell*> unassigned = circ->get_cells();
+
+    vr_cells = bitfield();
+    vl_cells = bitfield();
+    vr_nets = bitfield();
+    vl_nets = bitfield();
+    cut_nets = bitfield();
+    unassigned_cells = bitfield();
+    uncut_nets = bitfield();
+
+    for(auto nl : circ->get_nets()) {
+        uncut_nets.set(nl->label);
+    }
+
+    for(auto cl : circ->get_cells()) {
+        unassigned_cells.set(cl->label);
+    }
+
+    while(!unassigned.empty()) {
+        int random_index = rand() % unassigned.size();
+        cell* c = unassigned[random_index];
+
+        insert_right ? assign_right(c) : assign_left(c);
+
+        insert_right = !insert_right;
+        unassigned.erase(unassigned.begin() + random_index);
+    }
+}
 
 
-    //a3::partition* p = new a3::partition(circ);
-    std::sort(unassigned.begin(), unassigned.end(), cell_sort_most_nets);
+bitfield a3::partition::make_right_supercell() {
+    bitfield result;
+    bool first = true;
+    for(auto cl : vr_cells.to_vec()) {
+        if (first) {
+            result = circ->get_cell(cl)->net_labels;
+            first = false;
+        } else {
+            result = result.union_with(circ->get_cell(cl)->net_labels);
+        }
+    }
+    return result;
+}
 
-    cell* lcell = *unassigned.begin();
+bitfield a3::partition::make_left_supercell() {
+    bitfield result;
+    bool first = true;
+    for(auto cl : vl_cells.to_vec()) {
+        if (first) {
+            result = circ->get_cell(cl)->net_labels;
+            first = false;
+        } else {
+            result = result.union_with(circ->get_cell(cl)->net_labels);
+        }
+    }
+    return result;
+}
+
+void a3::partition::initial_solution_heur1() {
+    // sort nets by their fanout
+    std::vector<cell*> cells_fanout = std::vector<cell*>(circ->get_cells());
+    std::sort(cells_fanout.begin(), cells_fanout.end(), cell_sort_most_nets);
+
+    cell* lcell = *cells_fanout.begin();
     assign_left(lcell);
 
-    cell* rcell = *(unassigned.begin());
+    cell* rcell = *cells_fanout.begin();
 
-    // for the right, we want a cell that has the least overlap
-    // but still has many connections
     int score = 0;
-    for(auto& c : unassigned) {
+    for (auto c : cells_fanout) {
         int new_score = 0;
-        int n_mutual_nets = lcell->get_mutual_net_labels(c).size();
-        int n_r_nets = c->get_net_labels().size();
-        int n_l_nets = lcell->get_net_labels().size();
+        int n_mutual_nets = lcell->get_num_mutual_net_labels(c);
+        int n_r_nets = c->net_labels.size;
+        int n_l_nets = lcell->net_labels.size;
         int n_unique_r_nets = n_r_nets - n_mutual_nets;
         int n_unique_l_nets = n_l_nets - n_mutual_nets;
 
@@ -287,44 +217,30 @@ void a3::partition::initial_solution() {
     assign_right(rcell);
 
     bool insert_right = false;
-    while (unassigned.size() > 0) {
-        g_supercell = insert_right ? make_right_supercell() : make_left_supercell();
-        std::sort(unassigned.begin(), unassigned.end(), sort_by_most_mutual_to_g_supercell);
-
-        cell* c = *unassigned.begin();
-        bool rc = insert_right ? assign_right(c) : assign_left(c);
-        if (!rc) {
-            spdlog::warn("issue inserting cell {} in {}", c->label, insert_right? "right" : "left");
-        } else {
-            spdlog::debug("inserted cell {} in {}", c->label, insert_right? "right" : "left");
+    while (cells_fanout.size() > 0) {
+        bitfield supernet = insert_right ? make_right_supercell() : make_left_supercell();
+        auto iter = cells_fanout.begin();
+        std::vector<cell*>::iterator best_pos = iter;
+        int score = (*best_pos)->net_labels.intersection_with(supernet).size;
+        while(iter < cells_fanout.end()) {
+            int new_score = (*iter)->net_labels.intersection_with(supernet).size;
+            if (new_score > score) {
+                score = new_score;
+                best_pos = iter;
+            }
+            iter++;
         }
 
+        insert_right ? assign_right(*best_pos) : assign_left(*best_pos);
+
         insert_right = !insert_right;
-        delete g_supercell;
+        cells_fanout.erase(best_pos);
     }
-    assert(vl.size() == vr.size());
-    calculate_cut_set();
+    assert(vl_cells.size == vr_cells.size);
 }
 
-void a3::partition::initial_solution_random() {
-    bool insert_right = true;
-    srand(time(NULL));
-    while(unassigned.size() > 0) {
-        int random_index = rand() % unassigned.size();
-        cell* c = unassigned[random_index];
-        
-        bool rc = insert_right ? assign_right(c) : assign_left(c);
-        if (!rc) {
-            spdlog::warn("issue inserting cell {} in {}", c->label, insert_right? "right" : "left");
-        } else {
-            spdlog::debug("inserted cell {} in {}", c->label, insert_right? "right" : "left");
-        }
-
-        insert_right = !insert_right;
-    }
-    spdlog::debug("random assigned cost: {}", cost());
-    calculate_cut_set();
-    spdlog::debug("...and recalculating: {}", cost());
+cell* a3::partition::next_unassigned(vector<cell*> cell_prio_list) {
+    return cell_prio_list[vr_cells.size + vl_cells.size];
 }
 
 void a3::partition::print_cut_nets() {
@@ -337,6 +253,9 @@ void a3::partition::print_cut_nets() {
     spdlog::debug("]");
 }
 
+pnode::pnode() {
+}
+
 pnode* traverser::bfs_step() {
     pnode* rc = nullptr;
     if (!q_bfs.empty()) {
@@ -344,12 +263,12 @@ pnode* traverser::bfs_step() {
 
 
         visited_nodes++;
-        if (pn->p->unassigned.size() > 0) {
+        if (pn->p.unassigned_cells.size > 0) {
 
             // explore putting it on the left
-            if (!prune_imbalance || (pn->p->vl.size() < cells.size()/2 )) {
+            if (!prune_imbalance || (pn->p.vl_cells.size < cells.size()/2 )) {
                 pn->left = new pnode();
-                
+
                 // UI drawing related
                 pn->left->level = pn->level + 1;
                 pn->left->y = pn->y + 64.0*PNODE_DIAMETER;
@@ -357,13 +276,12 @@ pnode* traverser::bfs_step() {
                 pn->left->x = pn->x - PNODE_DIAMETER*(2<<levels_to_leaf);
 
                 pn->left->parent = pn;
-                pn->left->p = new a3::partition(pn->p);
-                pn->left->p->assign_left(*(pn->p->unassigned.begin())); //unassigned.begin
-                if (!prune_lb || !prune(pn->left->p, best)) {
+                pn->left->p = a3::partition(pn->p);
+                pn->left->p.assign_left( pn->p.next_unassigned(cells) );
+                if (!prune_lb || !prune(&pn->left->p, best)) {
                     q_bfs.push(pn->left);
                     pnodes.push_back(pn->left);
                 } else {
-                    delete pn->left->p;
                     delete pn->left;
                     pn->left = nullptr;
                 }
@@ -372,7 +290,7 @@ pnode* traverser::bfs_step() {
             }
 
             // explore putting it on the right
-            if ( (pn->level > 0 || !prune_symmetry) && (!prune_imbalance || (pn->p->vr.size() < cells.size()/2 ))) {
+            if ( (pn->level > 0 || !prune_symmetry) && (!prune_imbalance || (pn->p.vr_cells.size < cells.size()/2 ))) {
                 pn->right = new pnode();
                 
                 // UI drawing related
@@ -382,28 +300,24 @@ pnode* traverser::bfs_step() {
                 pn->right->x = pn->x + PNODE_DIAMETER*(2<<levels_to_leaf);
 
                 pn->right->parent = pn;
-                pn->right->p = new a3::partition(pn->p);
-                pn->right->p->assign_right(*(pn->p->unassigned.begin())); //unassigned.begin
-                if (!prune_lb || !prune(pn->right->p, best)) {
+                pn->right->p = a3::partition(pn->p);
+                pn->right->p.assign_right(pn->p.next_unassigned(cells));
+                if (!prune_lb || !prune(&pn->right->p, best)) {
                     q_bfs.push(pn->right);
                     pnodes.push_back(pn->right);
                 } else {
-                    delete pn->right->p;
                     delete pn->right;
                     pn->right = nullptr;
                 }
             } else {
                 spdlog::debug("pruning: imbalance");
             }
-
-        } else {
-            spdlog::info("leaf node: {}", pn->p->cost());
-            int tcost = pn->p->cost();
+        } else { 
+            spdlog::debug("leaf node: {}", pn->p.cost());
+            int tcost = pn->p.cost();
             int bcost = (*best)->cost();
-            prune(pn->p, best);
-            spdlog::info("Test cost/recalc: {}/{} best cost/recalc: {}/{}", tcost, pn->p->calculate_cut_set(), bcost, (*best)->calculate_cut_set());
+            prune(&pn->p, best);
         }
-
         rc = pn;
     } 
     return rc;
@@ -413,6 +327,7 @@ traverser::traverser(circuit* c, a3::partition** _best, bool (*prune_fn)(a3::par
     cells = vector<cell*>(c->get_cells());
     circ = c;
     std::sort(cells.begin(), cells.end(), cell_sort_most_nets);
+    cur_cell = cells.begin();
     visited_nodes = 0;
 
     // only turn this off for test mode
@@ -424,10 +339,8 @@ traverser::traverser(circuit* c, a3::partition** _best, bool (*prune_fn)(a3::par
     root->level = 0;
     root->y = PNODE_DIAMETER/2.0;
     root->x = circ->get_display_width()/2.0;
-    root->p = new a3::partition(c);
+    root->p = a3::partition(c);
 
-    root->p->calculate_cut_set();
-    
     q_bfs = queue<pnode*>();
     q_bfs.push(root);
 
@@ -446,47 +359,51 @@ void del_tree(pnode* root) {
     s.push(root);
     while(!s.empty()) {
         pnode* pn = s.top();
-        if (pn->left != nullptr or pn->right != nullptr) {
-            if (pn->left != nullptr) {
-                s.push(pn->left);
-            } 
-            if (pn->right != nullptr) {
-                s.push(pn->right);
-            }
-        } else {
-            if (pn->parent != nullptr) {
-                if (pn->parent->left == pn) {
-                    pn->parent->left = nullptr;
-                } else if (pn->parent->right == pn) {
-                    pn->parent->right = nullptr;
+        if (pn != nullptr) {
+            if (pn->left != nullptr or pn->right != nullptr) {
+                if (pn->left != nullptr) {
+                    s.push(pn->left);
                 } 
+                if (pn->right != nullptr) {
+                    s.push(pn->right);
+                }
+            } else {
+                if (pn->parent != nullptr) {
+                    if (pn->parent->left == pn) {
+                        pn->parent->left = nullptr;
+                    } else if (pn->parent->right == pn) {
+                        pn->parent->right = nullptr;
+                    } 
+                }
+                s.pop();
+                spdlog::info("I AM DELETING {}", (void*)pn);
+                delete pn;
             }
-            s.pop();
-            delete pn->p;
-            delete pn;
         }
     }
 }
 
 bitfield a3::partition::num_guaranteed_cut_nets() {
-    // foreach net - if the number of unassigned cells is > half, its a guaranteed cut
+    // foreach uncut net - if the number of unassigned cells on it is > half of remaining, its a guaranteed cut
     bitfield ret;
     int cut_net_count = 0;
     map<int,int> net_cell_counts;
 
-    for(auto n : circ_uncut_nets) {
+    for(auto n : uncut_nets.to_vec()) {
         net_cell_counts[n] = 0;
     }
 
-    int min_size = unassigned.size()/2;
-    for(auto c : unassigned) {
-        vector<int> cell_nets = cell_uncut_nets[c->label];
-        for (auto nl : cell_nets) {
-            net_cell_counts[nl]++;
-        }
+    int min_size = circ->get_n_cells()/2;
+
+    for(auto nl: uncut_nets.to_vec()) {
+       for (auto cl: circ->get_net(nl)->cell_labels.to_vec()) {
+           if (unassigned_cells.get(cl)) {
+                net_cell_counts[nl]++;
+           }
+       } 
     }
 
-    for (auto n : circ_uncut_nets) {
+    for (auto n : uncut_nets.to_vec()) {
         if (net_cell_counts[n] > min_size) {
             cut_net_count++;
             ret.set(n);
@@ -497,43 +414,51 @@ bitfield a3::partition::num_guaranteed_cut_nets() {
 }
 
 bitfield a3::partition::one_partition_full_cut_nets() {
+    // if one partition is already full, 
+    // the rest of the nets have to go to the other side
     bitfield ret;
-    vector<cell*> *remaining_side = nullptr;
-    if (vl.size() == circ->get_n_cells()/2) {
-        remaining_side = &vr;
-    }
-    else if (vr.size() == circ->get_n_cells()/2) {
-        remaining_side = &vl;
+    bitfield *side = nullptr;
+
+    if (vl_cells.size == circ->get_n_cells()/2) {
+        side = &vl_nets;
+    } else if (vr_cells.size == circ->get_n_cells()/2) {
+        side = &vr_nets;
     }
 
-    if (nullptr != remaining_side) {
-        for(auto c: unassigned) {
-            vector<int> uncut_nets = cell_uncut_nets[c->label];
-            cell *cc = circ->get_cell(c->label);
-            for(auto nl: uncut_nets) {
-                if (std::find(remaining_side->begin(), remaining_side->end(), cc) != remaining_side->end()) {
+    if (nullptr != side) {
+        // check if unassigned cells have nets on the 
+        // full side.  If so, they will be cut
+        for(auto nl : side->to_vec()) {
+            for (auto cl: unassigned_cells.to_vec()) {
+                if (circ->get_net(nl)->cell_labels.get(cl)) {
                     ret.set(nl);
+                    break; // can only cut once
                 }
             }
-
         }
     }
+
     return ret;
 }
 
-bitfield a3::partition::min_number_anchored_nets_cut() {
-    bitfield bl;
-    bitfield br;
-    for (auto c : unassigned) {
-        vector<int> cell_nets = cell_uncut_nets[c->label];
+int a3::partition::min_number_anchored_nets_cut() {
+    int result = 0;
+
+    // if an unassigned cell has nets already assigned to both left and right,
+    // e.g. M nets going left and N nets going right,
+    // one of these sets is guaranteed to be cut.
+    // we dont know which one, though
+    // this is mutually exclusive with the half full scenario, i think??
+    for (auto cl : unassigned_cells.to_vec()) {
+        cell* c = circ->get_cell(cl); 
         vector<int> myleftnets, myrightnets;
-        for (auto nl : cell_nets) {
+        for (auto nl : c->net_labels.to_vec()) {
             int num_added=0;
-            if (leftnets.get(nl) && !rightnets.get(nl)) {
+            if (vl_nets.get(nl) && !vr_nets.get(nl)) {
                 myleftnets.push_back(nl);
                 num_added++;
             }
-            if (rightnets.get(nl) && !leftnets.get(nl)) {
+            if (vr_nets.get(nl) && !vl_nets.get(nl)) {
                 myrightnets.push_back(nl);
                 num_added++;
             }
@@ -542,20 +467,28 @@ bitfield a3::partition::min_number_anchored_nets_cut() {
             }
         }
         if (myleftnets.size() > 0 && myrightnets.size() > 0) {
+	        // we cant really combine sets here, 
+            // what if one node's smaller set and another nodes smaller set
+            // have zero overlap
+            //
+            // but, the larger sets have total overlap	
+            // its hard to say which will pan out...
+            // so the best we can do, is take the maximal minimum set
+            //
+            // the largest of the 'smallest' sets is the 
             if (myleftnets.size() < myrightnets.size()) {
-                for(auto nl : myleftnets) {
-                    bl.set(nl);
+                if (myleftnets.size() > result) {
+                    result = myleftnets.size();
                 }
             } else {
-                for(auto nl : myrightnets) {
-                    br.set(nl);
+                if (myrightnets.size() > result) {
+                    result = myrightnets.size();
                 }
             }
         }
     }
-    // need intersection of the above, cant double count...
-    bitfield bu = bl.union_with(br);
-    return bu;
+    
+    return result;
 }
 
 // returning true means we prune the tree at (test) and below
@@ -564,19 +497,24 @@ bool prune_basic_cost(a3::partition* test, a3::partition** best) {
 
     // these are different measures, there can be overlap, so cant apply both
     bitfield guaranteed_cuts = test->num_guaranteed_cut_nets();
-    bitfield anchored_cuts = test->min_number_anchored_nets_cut();
     bitfield full_partition_cuts = test->one_partition_full_cut_nets();
-    int min_added_cuts = guaranteed_cuts.union_with(anchored_cuts).union_with(full_partition_cuts).size;
+    int anchored_cuts = 0;
 
-    spdlog::debug("\t({} vs {}) [{}]", test->cost(), (*best)->cost(), test->unassigned.size());
+    if (full_partition_cuts.size == 0) {
+        anchored_cuts = test->min_number_anchored_nets_cut();
+    }
+
+    int min_added_cuts = guaranteed_cuts.union_with(full_partition_cuts).size + anchored_cuts;
+
+    spdlog::debug("\t({} vs {}) [{}]", test->cost(), (*best)->cost(), test->unassigned_cells.size);
     int total_cost = min_added_cuts + test->cost();
     if (total_cost < (*best)->cost()) {
-        if (test->unassigned.size() == 0) {
+        if (test->unassigned_cells.size == 0) {
             spdlog::info("found new best! ({} < {}) {}", test->cost(), (*best)->cost(), (void*)test);
             *best = test;
         }
     } else {
-        spdlog::debug("PRUNING ({} >= {})", total_cost, (*best)->cost());
+        spdlog::debug("PRUNING ({} > {})", total_cost, (*best)->cost());
         if (test->cost() < (*best)->cost()) {
             spdlog::debug("YOU PRUNED BASED ON GUARANTEED NET CUTS");
         }

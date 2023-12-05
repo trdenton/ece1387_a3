@@ -11,6 +11,7 @@
 #include "ui.h"
 #include "circuit.h"
 #include "partition.h"
+#include "bitfield.h"
 
 using namespace std;
 
@@ -31,12 +32,11 @@ void print_version() {
 }
 
 pnode* run(circuit* c, traverser* t) {
-    static vector<cell*> seen;
+    static vector<int> seen;
     pnode* pn = t->bfs_step();
     if (pn != nullptr) {
-        vector<cell*>::iterator cell = pn->p->unassigned.begin();
-        if (std::find(seen.begin(), seen.end(), *cell) == seen.end()) {
-            seen.push_back( *cell ); 
+        if (std::find(seen.begin(), seen.end(), pn->level) == seen.end()) {
+            seen.push_back(pn->level); 
             spdlog::info("at level {}/{}.  Visited nodes: {}", seen.size(), c->get_n_cells(), t->visited_nodes);
         }
     }
@@ -96,7 +96,7 @@ int main(int n, char** args) {
     spdlog::info("Initial solution cost: {}", (*best)->cost());
     spdlog::info("init {}", init->to_string());
     spdlog::info("MAX COST: {}", circ->get_n_nets());
-    spdlog::info("Initial solution cost calculated again: {}", (*best)->calculate_cut_set());
+    spdlog::info("Initial solution cost calculated again: {}", (*best)->cut_nets.size);
     
     traverser* trav = new traverser(circ, best, prune_basic_cost);
     trav->prune_imbalance  = true;
@@ -111,7 +111,7 @@ int main(int n, char** args) {
         while (run(circ,trav) != nullptr) {}
     }
 
-    spdlog::info("Final solution cost: {} @ {}", (*best)->calculate_cut_set(), (void*)*best);
+    spdlog::info("Final solution cost: {} @ {}", (*best)->cut_nets.size, (void*)*best);
     spdlog::info("best {}", (*best)->to_string());
     unsigned long long int total_possible_nodes = (2<<(circ->get_n_cells()-1))-1;
     spdlog::info("Visited/possible nodes: {}/{}", trav->visited_nodes, total_possible_nodes);
@@ -122,7 +122,8 @@ int main(int n, char** args) {
     }
 
     spdlog::info("Exiting");
-    delete trav;
+    // TODO fix this... it segfaults /double frees
+    //delete trav;
     delete circ;
     //delete init;
     return 0;
