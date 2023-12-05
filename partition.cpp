@@ -271,7 +271,7 @@ pnode* traverser::dfs_step() {
 
                 // UI drawing related
                 pn->left->level = pn->level + 1;
-                pn->left->y = pn->y + 64.0*PNODE_DIAMETER;
+                pn->left->y = pn->y + 8*8092.0*PNODE_DIAMETER;
                 int levels_to_leaf = cells.size() - pn->level -2;
                 pn->left->x = pn->x - PNODE_DIAMETER*(2<<levels_to_leaf);
 
@@ -280,6 +280,7 @@ pnode* traverser::dfs_step() {
                 pn->left->p.assign_left( pn->p.next_unassigned(cells) );
                 if (!prune_lb || !prune(&pn->left->p, best)) {
                     pq.push(pn->left);
+                    pnodes.push_back(pn->left);
                 } else {
                     delete pn->left;
                     pn->left = nullptr;
@@ -294,7 +295,7 @@ pnode* traverser::dfs_step() {
                 
                 // UI drawing related
                 pn->right->level = pn->level + 1;
-                pn->right->y = pn->y + 64.0*PNODE_DIAMETER;
+                pn->right->y = pn->y + 8*8092.0*PNODE_DIAMETER;
                 int levels_to_leaf = cells.size() - pn->level -2;
                 pn->right->x = pn->x + PNODE_DIAMETER*(2<<levels_to_leaf);
 
@@ -303,6 +304,7 @@ pnode* traverser::dfs_step() {
                 pn->right->p.assign_right(pn->p.next_unassigned(cells));
                 if (!prune_lb || !prune(&pn->right->p, best)) {
                     pq.push(pn->right);
+                    pnodes.push_back(pn->right);
                 } else {
                     delete pn->right;
                     pn->right = nullptr;
@@ -336,7 +338,7 @@ pnode* traverser::bfs_step() {
 
                 // UI drawing related
                 pn->left->level = pn->level + 1;
-                pn->left->y = pn->y + 64.0*PNODE_DIAMETER;
+                pn->left->y = pn->y + 1024.0*PNODE_DIAMETER;
                 int levels_to_leaf = cells.size() - pn->level -2;
                 pn->left->x = pn->x - PNODE_DIAMETER*(2<<levels_to_leaf);
 
@@ -345,6 +347,7 @@ pnode* traverser::bfs_step() {
                 pn->left->p.assign_left( pn->p.next_unassigned(cells) );
                 if (!prune_lb || !prune(&pn->left->p, best)) {
                     q_bfs.push(pn->left);
+                    pnodes.push_back(pn->left);
                 } else {
                     delete pn->left;
                     pn->left = nullptr;
@@ -359,7 +362,7 @@ pnode* traverser::bfs_step() {
                 
                 // UI drawing related
                 pn->right->level = pn->level + 1;
-                pn->right->y = pn->y + 64.0*PNODE_DIAMETER;
+                pn->right->y = pn->y + 1024.0*PNODE_DIAMETER;
                 int levels_to_leaf = cells.size() - pn->level -2;
                 pn->right->x = pn->x + PNODE_DIAMETER*(2<<levels_to_leaf);
 
@@ -368,6 +371,7 @@ pnode* traverser::bfs_step() {
                 pn->right->p.assign_right(pn->p.next_unassigned(cells));
                 if (!prune_lb || !prune(&pn->right->p, best)) {
                     q_bfs.push(pn->right);
+                    pnodes.push_back(pn->right);
                 } else {
                     delete pn->right;
                     pn->right = nullptr;

@@ -47,7 +47,7 @@ void ui_init(circuit* c, traverser* t, pnode* (*cb)(circuit*, traverser*)) {
     run_fn = cb;
     //set_mouse_move_input(true);
 
-    set_interval(200000);
+    set_interval(1);
     event_loop(ui_click_handler, ui_mouse_handler, ui_key_handler, ui_drawscreen);
 }
 
@@ -56,11 +56,14 @@ void ui_teardown() {
 }
 
 void ui_drawscreen() {
+    static int x = 0;
     set_draw_mode (DRAW_NORMAL);  // Should set this if your program does any XOR drawing in callbacks.
     pnode* p = run_fn(circ, trav);
     //if (p != nullptr)
     //    ui_draw_pnode(p);
-    ui_draw(circ, trav);
+    x++;
+    if (x%100000 == 0)
+        ui_draw(circ, trav);
 }
 
 void ui_click_handler (float x, float y) {
