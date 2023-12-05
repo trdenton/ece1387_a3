@@ -107,7 +107,7 @@ bool cell_sort_most_nets(cell* a, cell* b) {
 
 void a3::partition::initial_solution() {
     initial_solution_random();
-    for(int i = 0; i < 1000; ++i) {
+    for(int i = 0; i < 10000; ++i) {
         a3::partition rand = a3::partition(this);
 
         rand.initial_solution_random();
@@ -229,7 +229,7 @@ pnode* traverser::bfs_step() {
                 spdlog::debug("pruning: imbalance");
             }
         } else { 
-            spdlog::info("leaf node: {}", pn->p.cost());
+            spdlog::debug("leaf node: {}", pn->p.cost());
             int tcost = pn->p.cost();
             int bcost = (*best)->cost();
             prune(&pn->p, best);
@@ -275,23 +275,26 @@ void del_tree(pnode* root) {
     s.push(root);
     while(!s.empty()) {
         pnode* pn = s.top();
-        if (pn->left != nullptr or pn->right != nullptr) {
-            if (pn->left != nullptr) {
-                s.push(pn->left);
-            } 
-            if (pn->right != nullptr) {
-                s.push(pn->right);
-            }
-        } else {
-            if (pn->parent != nullptr) {
-                if (pn->parent->left == pn) {
-                    pn->parent->left = nullptr;
-                } else if (pn->parent->right == pn) {
-                    pn->parent->right = nullptr;
+        if (pn != nullptr) {
+            if (pn->left != nullptr or pn->right != nullptr) {
+                if (pn->left != nullptr) {
+                    s.push(pn->left);
                 } 
+                if (pn->right != nullptr) {
+                    s.push(pn->right);
+                }
+            } else {
+                if (pn->parent != nullptr) {
+                    if (pn->parent->left == pn) {
+                        pn->parent->left = nullptr;
+                    } else if (pn->parent->right == pn) {
+                        pn->parent->right = nullptr;
+                    } 
+                }
+                s.pop();
+                spdlog::info("I AM DELETING {}", (void*)pn);
+                delete pn;
             }
-            s.pop();
-            delete pn;
         }
     }
 }
@@ -395,7 +398,7 @@ bool prune_basic_cost(a3::partition* test, a3::partition** best) {
     bitfield guaranteed_cuts = test->num_guaranteed_cut_nets();
     bitfield anchored_cuts = test->min_number_anchored_nets_cut();
     bitfield full_partition_cuts = test->one_partition_full_cut_nets();
-    int min_added_cuts = 0;//guaranteed_cuts.union_with(anchored_cuts).union_with(full_partition_cuts).size;
+    int min_added_cuts = guaranteed_cuts.union_with(anchored_cuts).union_with(full_partition_cuts).size;
 
     spdlog::debug("\t({} vs {}) [{}]", test->cost(), (*best)->cost(), test->unassigned_cells.size);
     int total_cost = min_added_cuts + test->cost();

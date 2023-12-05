@@ -106,7 +106,6 @@ TEST(Tree, bfs) {
     delete c;
 }
 
-/*
 TEST(Tree, bfs_prune_imbalance) {
     circuit* c = new circuit("../data/partition_test");
     a3::partition* p = new a3::partition(c);
@@ -154,7 +153,6 @@ TEST(Tree, bfs_prune_imbalance) {
     delete p;
     delete c;
 }
-*/
 
 TEST(bitfield, basic) {
     for(unsigned long long i = 0; i < 128; ++i) {

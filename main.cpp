@@ -32,11 +32,11 @@ void print_version() {
 }
 
 pnode* run(circuit* c, traverser* t) {
-    static vector<cell*> seen;
+    static vector<int> seen;
     pnode* pn = t->bfs_step();
     if (pn != nullptr) {
-        if (std::find(seen.begin(), seen.end(), *t->cur_cell) == seen.end()) {
-            seen.push_back( *t->cur_cell ); 
+        if (std::find(seen.begin(), seen.end(), pn->level) == seen.end()) {
+            seen.push_back(pn->level); 
             spdlog::info("at level {}/{}", seen.size(), c->get_n_cells());
         }
     }
@@ -99,9 +99,9 @@ int main(int n, char** args) {
     spdlog::info("Initial solution cost calculated again: {}", (*best)->cut_nets.size);
     
     traverser* trav = new traverser(circ, best, prune_basic_cost);
-    trav->prune_imbalance  = false;
-    trav->prune_lb = false;
-    trav->prune_symmetry = false;
+    trav->prune_imbalance  = true;
+    trav->prune_lb = true;
+    trav->prune_symmetry = true;
     spdlog::info("Traversing decision tree");
 
     if (interactive) {
@@ -122,7 +122,8 @@ int main(int n, char** args) {
     }
 
     spdlog::info("Exiting");
-    delete trav;
+    // TODO fix this... it segfaults /double frees
+    //delete trav;
     delete circ;
     //delete init;
     return 0;
