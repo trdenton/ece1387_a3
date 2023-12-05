@@ -37,7 +37,7 @@ pnode* run(circuit* c, traverser* t) {
         vector<cell*>::iterator cell = pn->p->unassigned.begin();
         if (std::find(seen.begin(), seen.end(), *cell) == seen.end()) {
             seen.push_back( *cell ); 
-            spdlog::info("at level {}/{}", seen.size(), c->get_n_cells());
+            spdlog::info("at level {}/{}.  Visited nodes: {}", seen.size(), c->get_n_cells(), t->visited_nodes);
         }
     }
     return pn;
