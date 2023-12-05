@@ -37,7 +37,7 @@ pnode* run(circuit* c, traverser* t) {
     if (pn != nullptr) {
         if (std::find(seen.begin(), seen.end(), pn->level) == seen.end()) {
             seen.push_back(pn->level); 
-            spdlog::info("at level {}/{}", seen.size(), c->get_n_cells());
+            spdlog::info("at level {}/{}.  Visited nodes: {}", seen.size(), c->get_n_cells(), t->visited_nodes);
         }
     }
     return pn;
