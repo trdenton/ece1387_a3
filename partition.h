@@ -34,6 +34,8 @@ namespace a3 {
         bitfield min_number_anchored_nets_cut();
         bitfield num_guaranteed_cut_nets();
         bitfield one_partition_full_cut_nets();
+
+        cell* next_unassigned(std::vector<cell*>);
         int cost();
         void update_cut_nets();
         partition(circuit*);

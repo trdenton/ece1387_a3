@@ -99,9 +99,9 @@ int main(int n, char** args) {
     spdlog::info("Initial solution cost calculated again: {}", (*best)->cut_nets.size);
     
     traverser* trav = new traverser(circ, best, prune_basic_cost);
-    trav->prune_imbalance  = true;
-    trav->prune_lb = true;
-    trav->prune_symmetry = true;
+    trav->prune_imbalance  = false;
+    trav->prune_lb = false;
+    trav->prune_symmetry = false;
     spdlog::info("Traversing decision tree");
 
     if (interactive) {

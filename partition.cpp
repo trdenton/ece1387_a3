@@ -155,6 +155,10 @@ void a3::partition::initial_solution_random() {
     }
 }
 
+cell* a3::partition::next_unassigned(vector<cell*> cell_prio_list) {
+    return cell_prio_list[vr_cells.size + vl_cells.size];
+}
+
 void a3::partition::print_cut_nets() {
     spdlog::debug("[");
     /*
@@ -175,12 +179,12 @@ pnode* traverser::bfs_step() {
 
 
         visited_nodes++;
-        if (cur_cell < cells.end()-1) {
+        if (pn->p.unassigned_cells.size > 0) {
 
             // explore putting it on the left
             if (!prune_imbalance || (pn->p.vl_cells.size < cells.size()/2 )) {
                 pn->left = new pnode();
-                
+
                 // UI drawing related
                 pn->left->level = pn->level + 1;
                 pn->left->y = pn->y + 64.0*PNODE_DIAMETER;
@@ -189,7 +193,7 @@ pnode* traverser::bfs_step() {
 
                 pn->left->parent = pn;
                 pn->left->p = a3::partition(pn->p);
-                pn->left->p.assign_left(*cur_cell);
+                pn->left->p.assign_left( pn->p.next_unassigned(cells) );
                 if (!prune_lb || !prune(&pn->left->p, best)) {
                     q_bfs.push(pn->left);
                     pnodes.push_back(pn->left);
@@ -213,7 +217,7 @@ pnode* traverser::bfs_step() {
 
                 pn->right->parent = pn;
                 pn->right->p = a3::partition(pn->p);
-                pn->right->p.assign_right(*cur_cell);
+                pn->right->p.assign_right(pn->p.next_unassigned(cells));
                 if (!prune_lb || !prune(&pn->right->p, best)) {
                     q_bfs.push(pn->right);
                     pnodes.push_back(pn->right);
@@ -224,8 +228,7 @@ pnode* traverser::bfs_step() {
             } else {
                 spdlog::debug("pruning: imbalance");
             }
-            ++cur_cell;
-        } else {
+        } else { 
             spdlog::info("leaf node: {}", pn->p.cost());
             int tcost = pn->p.cost();
             int bcost = (*best)->cost();
@@ -402,7 +405,7 @@ bool prune_basic_cost(a3::partition* test, a3::partition** best) {
             *best = test;
         }
     } else {
-        spdlog::debug("PRUNING ({} >= {})", total_cost, (*best)->cost());
+        spdlog::debug("PRUNING ({} > {})", total_cost, (*best)->cost());
         if (test->cost() < (*best)->cost()) {
             spdlog::debug("YOU PRUNED BASED ON GUARANTEED NET CUTS");
         }
