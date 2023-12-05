@@ -1,12 +1,12 @@
 #ifndef __BITFIELD_H__
 #define __BITFIELD_H__
 struct bitfield {
-    // assumption: we never have more than 128 nets.  we can get this from  
-    unsigned long long bits[2];
+    // assumption: we never have more than 256 nets.  we can get this from  
+    unsigned long long bits[4];
     int size;
 
     bool get(int net_num) {
-        assert(net_num < 128);
+        assert(net_num < 256);
         unsigned long long chunk = net_num/64;
         unsigned long long rem = net_num%64;
         unsigned long long mask = (1ULL<<rem);
@@ -17,7 +17,7 @@ struct bitfield {
     };
 
     void set(int net_num) {
-        assert(net_num < 128);
+        assert(net_num < 256);
         unsigned long long chunk = net_num/64;
         unsigned long long rem = net_num%64;
         unsigned long long mask = (1ULL<<rem);
@@ -28,7 +28,7 @@ struct bitfield {
     };
 
     void clear(int net_num) {
-        assert(net_num < 128);
+        assert(net_num < 256);
         unsigned long long chunk = net_num/64;
         unsigned long long rem = net_num%64;
         unsigned long long mask = ~(1ULL<<rem);
@@ -40,12 +40,12 @@ struct bitfield {
 
     bitfield union_with(bitfield& other) {
         bitfield result;
-        for(int i = 0; i < 2; ++i) {
+        for(int i = 0; i < 4; ++i) {
             result.bits[i] = bits[i] | other.bits[i];
         }
         // fix size
         result.size = 0;
-        for (int i = 0; i < 128; ++i) {
+        for (int i = 0; i < 256; ++i) {
             if (result.get(i)) {
                 result.size++;
             }
@@ -55,12 +55,12 @@ struct bitfield {
 
     bitfield intersection_with(bitfield& other) {
         bitfield result;
-        for(int i = 0; i < 2; ++i) {
+        for(int i = 0; i < 4; ++i) {
             result.bits[i] = bits[i] & other.bits[i];
         }
         // fix size
         result.size = 0;
-        for (int i = 0; i < 128; ++i) {
+        for (int i = 0; i < 256; ++i) {
             if (result.get(i)) {
                 result.size++;
             }
@@ -76,7 +76,7 @@ struct bitfield {
 
     std::vector<int> to_vec() {
         std::vector<int> ret;
-        for(int i = 0; i < 128; ++i) {
+        for(int i = 0; i < 256; ++i) {
             if (get(i)) {
                 ret.push_back(i);
             }
