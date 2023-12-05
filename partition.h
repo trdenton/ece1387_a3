@@ -31,7 +31,7 @@ namespace a3 {
 
         partition();
         partition(a3::partition*);
-        bitfield min_number_anchored_nets_cut();
+        int min_number_anchored_nets_cut();
         bitfield num_guaranteed_cut_nets();
         bitfield one_partition_full_cut_nets();
 

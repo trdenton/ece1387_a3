@@ -300,7 +300,7 @@ void del_tree(pnode* root) {
 }
 
 bitfield a3::partition::num_guaranteed_cut_nets() {
-    // foreach uncut net - if the number of unassigned cells is > half, its a guaranteed cut
+    // foreach uncut net - if the number of unassigned cells on it is > half of remaining, its a guaranteed cut
     bitfield ret;
     int cut_net_count = 0;
     map<int,int> net_cell_counts;
@@ -310,12 +310,13 @@ bitfield a3::partition::num_guaranteed_cut_nets() {
     }
 
     int min_size = circ->get_n_cells()/2;
-    for(auto cl : unassigned_cells.to_vec()) {
-        for (auto nl : circ->get_cell(cl)->net_labels.to_vec()) {
-            if (uncut_nets.get(nl)) {
+
+    for(auto nl: uncut_nets.to_vec()) {
+       for (auto cl: circ->get_net(nl)->cell_labels.to_vec()) {
+           if (unassigned_cells.get(cl)) {
                 net_cell_counts[nl]++;
-            }
-        }
+           }
+       } 
     }
 
     for (auto n : uncut_nets.to_vec()) {
@@ -329,22 +330,25 @@ bitfield a3::partition::num_guaranteed_cut_nets() {
 }
 
 bitfield a3::partition::one_partition_full_cut_nets() {
+    // if one partition is already full, 
+    // the rest of the nets have to go to the other side
     bitfield ret;
     bitfield *side = nullptr;
 
     if (vl_cells.size == circ->get_n_cells()/2) {
-        side = &vl_cells;
+        side = &vl_nets;
     } else if (vr_cells.size == circ->get_n_cells()/2) {
-        side = &vr_cells;
+        side = &vr_nets;
     }
 
     if (nullptr != side) {
-        for(auto cl : unassigned_cells.to_vec()) {
-            for (auto nl : uncut_nets.to_vec()) {
-                if (circ->get_cell(cl)->net_labels.get(nl)) {
-                    if (side->get(nl)) {
-                        ret.set(nl);
-                    }
+        // check if unassigned cells have nets on the 
+        // full side.  If so, they will be cut
+        for(auto nl : side->to_vec()) {
+            for (auto cl: unassigned_cells.to_vec()) {
+                if (circ->get_net(nl)->cell_labels.get(cl)) {
+                    ret.set(nl);
+                    break; // can only cut once
                 }
             }
         }
@@ -353,9 +357,14 @@ bitfield a3::partition::one_partition_full_cut_nets() {
     return ret;
 }
 
-bitfield a3::partition::min_number_anchored_nets_cut() {
-    bitfield bl;
-    bitfield br;
+int a3::partition::min_number_anchored_nets_cut() {
+    int result = 0;
+
+    // if an unassigned cell has nets already assigned to both left and right,
+    // e.g. M nets going left and N nets going right,
+    // one of these sets is guaranteed to be cut.
+    // we dont know which one, though
+    // this is mutually exclusive with the half full scenario, i think??
     for (auto cl : unassigned_cells.to_vec()) {
         cell* c = circ->get_cell(cl); 
         vector<int> myleftnets, myrightnets;
@@ -374,20 +383,28 @@ bitfield a3::partition::min_number_anchored_nets_cut() {
             }
         }
         if (myleftnets.size() > 0 && myrightnets.size() > 0) {
+	        // we cant really combine sets here, 
+            // what if one node's smaller set and another nodes smaller set
+            // have zero overlap
+            //
+            // but, the larger sets have total overlap	
+            // its hard to say which will pan out...
+            // so the best we can do, is take the maximal minimum set
+            //
+            // the largest of the 'smallest' sets is the 
             if (myleftnets.size() < myrightnets.size()) {
-                for(auto nl : myleftnets) {
-                    bl.set(nl);
+                if (myleftnets.size() > result) {
+                    result = myleftnets.size();
                 }
             } else {
-                for(auto nl : myrightnets) {
-                    br.set(nl);
+                if (myrightnets.size() > result) {
+                    result = myrightnets.size();
                 }
             }
         }
     }
-    // need intersection of the above, cant double count...
-    bitfield bu = bl.union_with(br);
-    return bu;
+    
+    return result;
 }
 
 // returning true means we prune the tree at (test) and below
@@ -396,9 +413,14 @@ bool prune_basic_cost(a3::partition* test, a3::partition** best) {
 
     // these are different measures, there can be overlap, so cant apply both
     bitfield guaranteed_cuts = test->num_guaranteed_cut_nets();
-    bitfield anchored_cuts = test->min_number_anchored_nets_cut();
     bitfield full_partition_cuts = test->one_partition_full_cut_nets();
-    int min_added_cuts = guaranteed_cuts.union_with(anchored_cuts).union_with(full_partition_cuts).size;
+    int anchored_cuts = 0;
+
+    if (full_partition_cuts.size == 0) {
+        anchored_cuts = test->min_number_anchored_nets_cut();
+    }
+
+    int min_added_cuts = guaranteed_cuts.union_with(full_partition_cuts).size + anchored_cuts;
 
     spdlog::debug("\t({} vs {}) [{}]", test->cost(), (*best)->cost(), test->unassigned_cells.size);
     int total_cost = min_added_cuts + test->cost();
