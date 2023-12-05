@@ -107,7 +107,7 @@ bool cell_sort_most_nets(cell* a, cell* b) {
 
 void a3::partition::initial_solution() {
     initial_solution_random();
-    for(int i = 0; i < 10000; ++i) {
+    for(int i = 0; i < 100000; ++i) {
         a3::partition rand = a3::partition(this);
 
         rand.initial_solution_random();
