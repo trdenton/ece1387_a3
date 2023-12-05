@@ -22,6 +22,7 @@ void print_usage() {
     cout << "\t-f circuit_file: the circuit file (required)" <<endl;
     cout << "\t-d: turn on debug log level" <<endl;
     cout << "\t-i: enable interactive (gui) mode" <<endl;
+    cout << "\t-b: use bfs mode (youd better have a lot of RAM for cct3/4.....)" <<endl;
 }
 
 void print_version() {
@@ -33,7 +34,7 @@ void print_version() {
 
 pnode* run(circuit* c, traverser* t) {
     static vector<int> seen;
-    pnode* pn = t->bfs_step();
+    pnode* pn = t->bfs ? t->bfs_step() : t->dfs_step();
     if (pn != nullptr) {
         if (std::find(seen.begin(), seen.end(), pn->level) == seen.end()) {
             seen.push_back(pn->level); 
@@ -47,10 +48,11 @@ int main(int n, char** args) {
     string file = "";
 
     bool interactive = false;
+    bool bfs = false;
 
     for(;;)
     {
-        switch(getopt(n, args, "vhf:di"))
+        switch(getopt(n, args, "vhf:dib"))
         {
             case 'f':
                 file = optarg;
@@ -63,6 +65,11 @@ int main(int n, char** args) {
             case 'v':
                 print_version();
                 return 0;
+
+            case 'b':
+                bfs = true;
+                continue;
+
 
             case 'i':
                 interactive = true;
@@ -96,9 +103,11 @@ int main(int n, char** args) {
     spdlog::info("Initial solution cost: {}", (*best)->cost());
     spdlog::info("init {}", init->to_string());
     spdlog::info("MAX COST: {}", circ->get_n_nets());
-    spdlog::info("Initial solution cost calculated again: {}", (*best)->cut_nets.size);
+
+    spdlog::info("Traversal mode: {}", bfs ? "BFS" : "Lowest Bound");
     
     traverser* trav = new traverser(circ, best, prune_basic_cost);
+    trav->bfs = bfs;
     trav->prune_imbalance  = true;
     trav->prune_lb = true;
     trav->prune_symmetry = true;

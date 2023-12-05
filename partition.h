@@ -64,15 +64,24 @@ struct pnode {
     pnode();
 };
 
+class pnode_cut_compare {
+    public:
+        bool operator() (pnode* a, pnode* b) {
+            return a->p.cut_nets.size > b->p.cut_nets.size;
+        } 
+};
+
 class traverser {
     pnode* root;
     circuit* circ;
     std::queue<pnode*> q_bfs;
+    std::priority_queue<pnode*, std::vector<pnode*>, pnode_cut_compare> pq;
     std::vector<cell*> cells;
     a3::partition** best;
     bool (*prune)(a3::partition* test, a3::partition** best);
     public:
         std::vector<cell*>::iterator cur_cell;
+	bool bfs;
         bool prune_imbalance;
         bool prune_symmetry;
         bool prune_lb;
@@ -81,6 +90,7 @@ class traverser {
         traverser(circuit* c, a3::partition** best, bool (*prune_fn)(a3::partition* test, a3::partition** best));
         ~traverser();
         pnode* bfs_step();
+	pnode* dfs_step();
 };
 
 bool cell_sort_most_nets(cell* a, cell* b);

@@ -256,6 +256,71 @@ void a3::partition::print_cut_nets() {
 pnode::pnode() {
 }
 
+pnode* traverser::dfs_step() {
+    pnode* rc = nullptr;
+    if (!pq.empty()) {
+        pnode* pn = pq.top(); pq.pop();
+
+
+        visited_nodes++;
+        if (pn->p.unassigned_cells.size > 0) {
+
+            // explore putting it on the left
+            if (!prune_imbalance || (pn->p.vl_cells.size < cells.size()/2 )) {
+                pn->left = new pnode();
+
+                // UI drawing related
+                pn->left->level = pn->level + 1;
+                pn->left->y = pn->y + 64.0*PNODE_DIAMETER;
+                int levels_to_leaf = cells.size() - pn->level -2;
+                pn->left->x = pn->x - PNODE_DIAMETER*(2<<levels_to_leaf);
+
+                pn->left->parent = pn;
+                pn->left->p = a3::partition(pn->p);
+                pn->left->p.assign_left( pn->p.next_unassigned(cells) );
+                if (!prune_lb || !prune(&pn->left->p, best)) {
+                    pq.push(pn->left);
+                } else {
+                    delete pn->left;
+                    pn->left = nullptr;
+                }
+            } else {
+                spdlog::debug("pruning: imbalance");
+            }
+
+            // explore putting it on the right
+            if ( (pn->level > 0 || !prune_symmetry) && (!prune_imbalance || (pn->p.vr_cells.size < cells.size()/2 ))) {
+                pn->right = new pnode();
+                
+                // UI drawing related
+                pn->right->level = pn->level + 1;
+                pn->right->y = pn->y + 64.0*PNODE_DIAMETER;
+                int levels_to_leaf = cells.size() - pn->level -2;
+                pn->right->x = pn->x + PNODE_DIAMETER*(2<<levels_to_leaf);
+
+                pn->right->parent = pn;
+                pn->right->p = a3::partition(pn->p);
+                pn->right->p.assign_right(pn->p.next_unassigned(cells));
+                if (!prune_lb || !prune(&pn->right->p, best)) {
+                    pq.push(pn->right);
+                } else {
+                    delete pn->right;
+                    pn->right = nullptr;
+                }
+            } else {
+                spdlog::debug("pruning: imbalance");
+            }
+        } else { 
+            spdlog::debug("leaf node: {}", pn->p.cost());
+            int tcost = pn->p.cost();
+            int bcost = (*best)->cost();
+            prune(&pn->p, best);
+        }
+        rc = pn;
+    } 
+    return rc;
+}
+
 pnode* traverser::bfs_step() {
     pnode* rc = nullptr;
     if (!q_bfs.empty()) {
@@ -280,7 +345,6 @@ pnode* traverser::bfs_step() {
                 pn->left->p.assign_left( pn->p.next_unassigned(cells) );
                 if (!prune_lb || !prune(&pn->left->p, best)) {
                     q_bfs.push(pn->left);
-                    pnodes.push_back(pn->left);
                 } else {
                     delete pn->left;
                     pn->left = nullptr;
@@ -304,7 +368,6 @@ pnode* traverser::bfs_step() {
                 pn->right->p.assign_right(pn->p.next_unassigned(cells));
                 if (!prune_lb || !prune(&pn->right->p, best)) {
                     q_bfs.push(pn->right);
-                    pnodes.push_back(pn->right);
                 } else {
                     delete pn->right;
                     pn->right = nullptr;
@@ -324,6 +387,7 @@ pnode* traverser::bfs_step() {
 }
 
 traverser::traverser(circuit* c, a3::partition** _best, bool (*prune_fn)(a3::partition* test, a3::partition** best)) {
+    bfs = false;
     cells = vector<cell*>(c->get_cells());
     circ = c;
     std::sort(cells.begin(), cells.end(), cell_sort_most_nets);
@@ -343,10 +407,10 @@ traverser::traverser(circuit* c, a3::partition** _best, bool (*prune_fn)(a3::par
 
     q_bfs = queue<pnode*>();
     q_bfs.push(root);
+    pq.push(root);
 
     prune = prune_fn;
     best = _best;
-    pnodes.push_back(root);
 
 }
 
