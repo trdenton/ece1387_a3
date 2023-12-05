@@ -1,0 +1,16 @@
+submission for a3
+also available at https://github.com/trdenton/ece1387_a3
+
+
+compilation:
+
+
+mkdir build
+cd build
+cmake -DCMAKE_BUILD_TYPE=Release ..
+make
+
+./a3 -f ../data/cct
+
+
+note: adding the ui bits increases memory by a large amount, you can check it out on the 'hacky_ui' branch at https://github.com/trdenton/ece1387_a3
